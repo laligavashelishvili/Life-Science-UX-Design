@@ -1,0 +1,2015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ClinTrack — Drug Accountability & Supply Monitor</title>
+<style>
+/* ─── RESET & BASE ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:          #0f1117;
+  --bg2:         #161b27;
+  --bg3:         #1e2636;
+  --bg4:         #252d3d;
+  --border:      #2b3550;
+  --border2:     #3a4560;
+  --text:        #e2e8f5;
+  --text2:       #8b96b0;
+  --text3:       #5a6480;
+  --accent:      #3b82f6;
+  --accent-h:    #2563eb;
+  --accent2:     #6366f1;
+  --green:       #22c55e;
+  --green-bg:    rgba(34,197,94,.12);
+  --yellow:      #f59e0b;
+  --yellow-bg:   rgba(245,158,11,.12);
+  --red:         #ef4444;
+  --red-bg:      rgba(239,68,68,.12);
+  --orange:      #f97316;
+  --orange-bg:   rgba(249,115,22,.12);
+  --purple:      #a855f7;
+  --purple-bg:   rgba(168,85,247,.12);
+  --cyan:        #06b6d4;
+  --cyan-bg:     rgba(6,182,212,.12);
+  --sidebar-w:   220px;
+  --header-h:    56px;
+  --radius:      10px;
+  --radius-sm:   6px;
+  --shadow:      0 4px 20px rgba(0,0,0,.4);
+  font-size: 13px;
+}
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; line-height: 1.5; }
+
+/* ─── SCROLLBAR ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ─── TYPOGRAPHY ────────────────────────────────────────────── */
+h1 { font-size: 1.25rem; font-weight: 700; }
+h2 { font-size: 1rem; font-weight: 600; }
+h3 { font-size: .875rem; font-weight: 600; }
+
+/* ─── LAYOUT ─────────────────────────────────────────────────── */
+#app { display: flex; height: 100vh; overflow: hidden; }
+
+/* ─── SIDEBAR ────────────────────────────────────────────────── */
+#sidebar {
+  width: var(--sidebar-w); flex-shrink: 0;
+  background: var(--bg2); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow-y: auto; z-index: 10;
+}
+.sidebar-logo {
+  padding: 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.sidebar-logo .logo-icon {
+  width: 32px; height: 32px; background: var(--accent);
+  border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; font-weight: 800; color: #fff; flex-shrink: 0;
+}
+.sidebar-logo .logo-text { font-size: .875rem; font-weight: 700; }
+.sidebar-logo .logo-sub { font-size: .7rem; color: var(--text2); }
+
+.sidebar-section { padding: 12px 10px 4px; font-size: .65rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .1em; color: var(--text3); }
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; margin: 1px 6px; border-radius: var(--radius-sm);
+  cursor: pointer; transition: background .15s, color .15s;
+  font-size: .8rem; color: var(--text2); user-select: none;
+}
+.nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: rgba(59,130,246,.18); color: var(--accent); }
+.nav-item .badge {
+  margin-left: auto; background: var(--red); color: #fff;
+  font-size: .6rem; font-weight: 700; border-radius: 99px;
+  padding: 1px 6px; min-width: 18px; text-align: center;
+}
+.nav-item .badge.yellow { background: var(--yellow); color: #000; }
+.nav-item .badge.green  { background: var(--green); color: #000; }
+
+.sidebar-study { padding: 6px 12px 6px 14px; display: flex; align-items: center; gap: 8px;
+  cursor: pointer; border-radius: var(--radius-sm); margin: 1px 6px;
+  font-size: .78rem; transition: background .15s; }
+.sidebar-study:hover { background: var(--bg3); }
+.sidebar-study.active { background: var(--bg4); }
+.study-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.sidebar-study .study-name { font-weight: 600; }
+.sidebar-study .study-id { color: var(--text2); font-size: .7rem; }
+
+.sidebar-footer {
+  margin-top: auto; padding: 12px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px; font-size: .75rem;
+}
+.avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--accent2); display: flex; align-items: center; justify-content: center;
+  font-size: .7rem; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+
+/* ─── MAIN CONTENT ───────────────────────────────────────────── */
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* ─── TOP BAR ────────────────────────────────────────────────── */
+#topbar {
+  height: var(--header-h); background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 20px; flex-shrink: 0;
+}
+.topbar-title { font-size: .95rem; font-weight: 700; }
+.topbar-breadcrumb { font-size: .75rem; color: var(--text2); }
+.topbar-breadcrumb span { color: var(--text); }
+
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+.search-box {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 6px 10px;
+  display: flex; align-items: center; gap: 6px;
+  font-size: .78rem; color: var(--text2); width: 200px;
+  transition: border .15s;
+}
+.search-box input {
+  background: none; border: none; outline: none;
+  color: var(--text); width: 100%; font-size: .78rem;
+}
+.search-box:focus-within { border-color: var(--accent); }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: var(--radius-sm);
+  font-size: .78rem; font-weight: 600; cursor: pointer;
+  border: none; transition: all .15s; white-space: nowrap;
+}
+.btn svg { width: 13px; height: 13px; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-h); }
+.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--bg3); color: var(--text); }
+.btn-danger { background: var(--red-bg); color: var(--red); border: 1px solid rgba(239,68,68,.3); }
+.btn-danger:hover { background: rgba(239,68,68,.2); }
+.btn-success { background: var(--green-bg); color: var(--green); border: 1px solid rgba(34,197,94,.3); }
+.btn-success:hover { background: rgba(34,197,94,.2); }
+.btn-warning { background: var(--yellow-bg); color: var(--yellow); border: 1px solid rgba(245,158,11,.3); }
+.btn-warning:hover { background: rgba(245,158,11,.2); }
+
+.icon-btn {
+  width: 32px; height: 32px; border-radius: var(--radius-sm);
+  background: var(--bg3); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background .15s; position: relative;
+}
+.icon-btn:hover { background: var(--bg4); }
+.icon-btn svg { width: 15px; height: 15px; color: var(--text2); }
+.notif-dot {
+  position: absolute; top: 5px; right: 5px;
+  width: 7px; height: 7px; background: var(--red);
+  border-radius: 50%; border: 1px solid var(--bg2);
+}
+
+/* ─── PAGE CONTAINER ─────────────────────────────────────────── */
+#page-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+
+/* ─── ALERT BANNER ───────────────────────────────────────────── */
+.alert-banner {
+  background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.3);
+  border-radius: var(--radius); padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px; font-size: .78rem;
+  cursor: pointer; transition: background .15s;
+}
+.alert-banner:hover { background: rgba(239,68,68,.18); }
+.alert-banner svg { color: var(--red); flex-shrink: 0; width: 16px; height: 16px; }
+.alert-banner strong { color: var(--red); }
+.alert-banner .alert-action { margin-left: auto; color: var(--accent); text-decoration: underline; white-space: nowrap; }
+
+/* ─── KPI ROW ─────────────────────────────────────────────────── */
+.kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+.kpi-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 4px;
+  transition: border-color .2s;
+}
+.kpi-card:hover { border-color: var(--border2); }
+.kpi-card.alert { border-color: rgba(239,68,68,.4); }
+.kpi-card.warn  { border-color: rgba(245,158,11,.4); }
+.kpi-label { font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text2); }
+.kpi-value { font-size: 1.6rem; font-weight: 800; line-height: 1.1; }
+.kpi-sub   { font-size: .7rem; color: var(--text2); display: flex; align-items: center; gap: 4px; }
+.kpi-sub .up   { color: var(--green); }
+.kpi-sub .down { color: var(--red); }
+.kpi-sub .warn { color: var(--yellow); }
+
+/* ─── TWO-COLUMN GRID ─────────────────────────────────────────── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+/* ─── CARD ────────────────────────────────────────────────────── */
+.card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.card-header {
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.card-header h2 { font-size: .85rem; }
+.card-header .card-actions { margin-left: auto; display: flex; gap: 6px; }
+.card-body { padding: 14px 16px; }
+
+/* ─── SITE OVERVIEW GRID ──────────────────────────────────────── */
+.site-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.site-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px; cursor: pointer;
+  transition: border-color .2s, box-shadow .2s;
+}
+.site-card:hover { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(59,130,246,.2); }
+.site-card.critical { border-color: rgba(239,68,68,.5); }
+.site-card.warning  { border-color: rgba(245,158,11,.4); }
+
+.site-card-top { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.site-icon {
+  width: 36px; height: 36px; border-radius: 8px; background: var(--bg4);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.site-icon svg { width: 18px; height: 18px; color: var(--accent); }
+.site-name { font-weight: 700; font-size: .85rem; }
+.site-location { font-size: .7rem; color: var(--text2); }
+
+.site-status-pill {
+  margin-left: auto; padding: 2px 8px; border-radius: 99px;
+  font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+}
+.pill-ok       { background: var(--green-bg);  color: var(--green); }
+.pill-warn     { background: var(--yellow-bg); color: var(--yellow); }
+.pill-critical { background: var(--red-bg);    color: var(--red); }
+.pill-transit  { background: var(--cyan-bg);   color: var(--cyan); }
+.pill-pending  { background: var(--purple-bg); color: var(--purple); }
+.pill-grey     { background: var(--bg4);       color: var(--text2); }
+
+.site-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+.site-stat { background: var(--bg4); border-radius: 6px; padding: 6px 8px; }
+.site-stat .ss-val { font-size: 1rem; font-weight: 700; }
+.site-stat .ss-lbl { font-size: .62rem; color: var(--text2); }
+.site-stat.ss-warn { background: var(--yellow-bg); }
+.site-stat.ss-red  { background: var(--red-bg); }
+
+.stock-bar-wrap { margin-bottom: 8px; }
+.stock-bar-label { display: flex; justify-content: space-between; font-size: .68rem; color: var(--text2); margin-bottom: 3px; }
+.stock-bar { height: 6px; border-radius: 3px; background: var(--bg4); overflow: hidden; }
+.stock-fill { height: 100%; border-radius: 3px; transition: width .6s; }
+.fill-green  { background: var(--green); }
+.fill-yellow { background: var(--yellow); }
+.fill-red    { background: var(--red); }
+
+.site-card-footer { display: flex; justify-content: space-between; align-items: center; font-size: .68rem; color: var(--text2); }
+
+/* ─── TABLE ───────────────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .78rem; }
+thead th {
+  padding: 8px 12px; text-align: left;
+  font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--text3); border-bottom: 1px solid var(--border);
+  white-space: nowrap; background: var(--bg2);
+  position: sticky; top: 0; z-index: 1;
+}
+tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+tbody tr:hover { background: var(--bg3); }
+tbody tr:last-child { border-bottom: none; }
+td { padding: 9px 12px; vertical-align: middle; }
+td.mono { font-family: 'Courier New', monospace; font-size: .72rem; color: var(--cyan); }
+
+.expiry-near { color: var(--yellow); font-weight: 600; }
+.expiry-critical { color: var(--red); font-weight: 700; }
+.expiry-ok { color: var(--text2); }
+
+/* ─── SHIPMENT TIMELINE ───────────────────────────────────────── */
+.shipment-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px 14px;
+  margin-bottom: 10px; cursor: pointer;
+  transition: border-color .2s;
+}
+.shipment-card:hover { border-color: var(--border2); }
+.shipment-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.shipment-id { font-family: monospace; font-size: .75rem; color: var(--cyan); }
+.shipment-route { font-size: .78rem; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.shipment-route svg { width: 12px; height: 12px; color: var(--text2); }
+.shipment-meta { margin-left: auto; text-align: right; font-size: .68rem; color: var(--text2); }
+
+.progress-steps { display: flex; align-items: center; gap: 0; }
+.step {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  flex: 1; position: relative;
+}
+.step-circle {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid var(--border2); background: var(--bg4);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .55rem; font-weight: 700; z-index: 1; flex-shrink: 0;
+}
+.step.done .step-circle { background: var(--green); border-color: var(--green); color: #fff; }
+.step.active .step-circle { background: var(--accent); border-color: var(--accent); color: #fff; animation: pulse 2s infinite; }
+.step.warn .step-circle { background: var(--yellow); border-color: var(--yellow); color: #000; }
+.step-label { font-size: .6rem; color: var(--text2); text-align: center; max-width: 60px; }
+.step-connector {
+  flex: 1; height: 2px; background: var(--border2); margin-top: -15px; z-index: 0;
+}
+.step-connector.done { background: var(--green); }
+.step-connector.active { background: var(--accent); }
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,.5); }
+  50% { box-shadow: 0 0 0 6px rgba(59,130,246,0); }
+}
+
+/* ─── CONTACTS CARD ───────────────────────────────────────────── */
+.contacts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.contact-item {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.contact-role { font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text3); }
+.contact-name { font-size: .8rem; font-weight: 600; }
+.contact-info { font-size: .7rem; color: var(--accent); cursor: pointer; display: flex; align-items: center; gap: 4px; }
+.contact-info svg { width: 11px; height: 11px; }
+.contact-actions { display: flex; gap: 6px; margin-top: 4px; }
+
+/* ─── ALERT LIST ──────────────────────────────────────────────── */
+.alert-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.alert-item:last-child { border-bottom: none; }
+.alert-icon {
+  width: 28px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.alert-icon svg { width: 14px; height: 14px; }
+.alert-icon.red    { background: var(--red-bg);    color: var(--red); }
+.alert-icon.yellow { background: var(--yellow-bg); color: var(--yellow); }
+.alert-icon.blue   { background: var(--cyan-bg);   color: var(--cyan); }
+.alert-icon.purple { background: var(--purple-bg); color: var(--purple); }
+.alert-text { flex: 1; }
+.alert-text strong { font-size: .8rem; display: block; margin-bottom: 2px; }
+.alert-text span { font-size: .72rem; color: var(--text2); }
+.alert-time { font-size: .65rem; color: var(--text3); white-space: nowrap; margin-top: 2px; }
+.alert-item .action-btns { display: flex; gap: 6px; flex-shrink: 0; align-self: center; }
+
+/* ─── FLOW DIAGRAM ────────────────────────────────────────────── */
+.flow-container { display: flex; align-items: center; justify-content: space-around; padding: 20px 10px; gap: 8px; overflow-x: auto; }
+.flow-node {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px; min-width: 110px;
+  text-align: center; flex-shrink: 0; transition: border-color .2s;
+}
+.flow-node:hover { border-color: var(--accent); }
+.flow-node .fn-icon { font-size: 1.4rem; margin-bottom: 6px; }
+.flow-node .fn-label { font-size: .72rem; font-weight: 700; margin-bottom: 4px; }
+.flow-node .fn-count { font-size: 1.3rem; font-weight: 800; }
+.flow-node .fn-sub { font-size: .62rem; color: var(--text2); }
+.flow-node.fn-active { border-color: var(--accent); background: rgba(59,130,246,.08); }
+.flow-node.fn-warn  { border-color: var(--yellow); }
+.flow-node.fn-crit  { border-color: var(--red); background: var(--red-bg); }
+
+.flow-arrow {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0;
+}
+.arrow-line { width: 40px; height: 2px; background: var(--border2); position: relative; }
+.arrow-line::after {
+  content: ''; position: absolute; right: -1px; top: -4px;
+  border: 5px solid transparent; border-left-color: var(--border2);
+}
+.arrow-label { font-size: .6rem; color: var(--text2); white-space: nowrap; }
+.arrow-count { font-size: .65rem; font-weight: 700; color: var(--cyan); }
+
+/* ─── RECONCILIATION ──────────────────────────────────────────── */
+.recon-summary {
+  display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px;
+}
+.recon-box {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 12px; text-align: center;
+}
+.recon-box .rb-val { font-size: 1.4rem; font-weight: 800; }
+.recon-box .rb-lbl { font-size: .62rem; color: var(--text2); font-weight: 600; text-transform: uppercase; }
+.recon-box.rb-match { border-color: rgba(34,197,94,.3); }
+.recon-box.rb-match .rb-val { color: var(--green); }
+.recon-box.rb-disc  { border-color: rgba(239,68,68,.3); }
+.recon-box.rb-disc  .rb-val { color: var(--red); }
+.recon-box.rb-exp   { border-color: rgba(245,158,11,.3); }
+.recon-box.rb-exp   .rb-val { color: var(--yellow); }
+
+/* ─── TABS ────────────────────────────────────────────────────── */
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+.tab {
+  padding: 8px 16px; font-size: .78rem; font-weight: 600;
+  cursor: pointer; border-bottom: 2px solid transparent;
+  color: var(--text2); transition: all .15s; user-select: none;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ─── MODAL ───────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.65); backdrop-filter: blur(4px);
+  z-index: 100; display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.hidden { display: none; }
+.modal {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 14px; width: 100%; max-width: 640px; max-height: 90vh;
+  overflow-y: auto; box-shadow: var(--shadow);
+}
+.modal-header {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+  position: sticky; top: 0; background: var(--bg2); z-index: 1;
+}
+.modal-header h2 { font-size: .95rem; }
+.modal-close {
+  margin-left: auto; width: 28px; height: 28px; border-radius: 6px;
+  background: var(--bg3); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: .9rem; color: var(--text2);
+}
+.modal-close:hover { background: var(--bg4); }
+.modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.modal-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
+
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: .72rem; font-weight: 600; color: var(--text2); }
+.form-control {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 8px 12px;
+  font-size: .8rem; color: var(--text); width: 100%;
+  transition: border-color .15s; outline: none;
+}
+.form-control:focus { border-color: var(--accent); }
+select.form-control option { background: var(--bg3); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-hint { font-size: .68rem; color: var(--text3); }
+
+/* ─── SAFETY STOCK INDICATOR ─────────────────────────────────── */
+.safety-indicator {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg3); border-radius: var(--radius-sm); padding: 8px 12px;
+  font-size: .72rem;
+}
+.safety-indicator .si-label { color: var(--text2); flex-shrink: 0; }
+.safety-indicator .si-bar { flex: 1; height: 8px; background: var(--bg4); border-radius: 4px; overflow: hidden; position: relative; }
+.safety-indicator .si-fill { height: 100%; border-radius: 4px; }
+.safety-indicator .si-threshold {
+  position: absolute; top: -2px; bottom: -2px;
+  width: 2px; background: var(--yellow);
+  border-radius: 1px;
+}
+.safety-indicator .si-val { font-weight: 700; flex-shrink: 0; min-width: 32px; text-align: right; }
+.safety-indicator .si-thresh-label { font-size: .65rem; color: var(--yellow); flex-shrink: 0; }
+
+/* ─── MINI BADGE ──────────────────────────────────────────────── */
+.mini-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 7px; border-radius: 4px; font-size: .65rem; font-weight: 600;
+}
+.mb-green  { background: var(--green-bg);  color: var(--green); }
+.mb-yellow { background: var(--yellow-bg); color: var(--yellow); }
+.mb-red    { background: var(--red-bg);    color: var(--red); }
+.mb-blue   { background: var(--cyan-bg);   color: var(--cyan); }
+.mb-purple { background: var(--purple-bg); color: var(--purple); }
+.mb-grey   { background: var(--bg4);       color: var(--text2); }
+
+/* ─── TOOLTIP ─────────────────────────────────────────────────── */
+[data-tip] { position: relative; }
+[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 6px); left: 50%;
+  transform: translateX(-50%); background: var(--bg4); border: 1px solid var(--border2);
+  padding: 4px 8px; border-radius: 4px; font-size: .67rem; white-space: nowrap;
+  pointer-events: none; z-index: 99; color: var(--text);
+  box-shadow: 0 2px 8px rgba(0,0,0,.4);
+}
+
+/* ─── VIEWS ───────────────────────────────────────────────────── */
+.view { display: none; flex-direction: column; gap: 20px; }
+.view.active { display: flex; }
+
+/* ─── SECTION HEADER ──────────────────────────────────────────── */
+.section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.section-header h2 { font-size: .9rem; }
+.section-header .section-actions { margin-left: auto; display: flex; gap: 8px; }
+
+/* ─── RESPONSIVE ──────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  :root { --sidebar-w: 48px; }
+  .sidebar-logo .logo-text, .sidebar-logo .logo-sub,
+  .nav-item span, .sidebar-study .study-name, .sidebar-study .study-id,
+  .sidebar-section, .sidebar-footer .footer-info { display: none; }
+  .nav-item, .sidebar-study { justify-content: center; padding: 10px; }
+  .nav-item .badge { position: absolute; top: 4px; right: 4px; }
+  .kpi-row { grid-template-columns: repeat(3, 1fr); }
+  .two-col { grid-template-columns: 1fr; }
+  .three-col { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 800px) {
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .three-col { grid-template-columns: 1fr; }
+  .recon-summary { grid-template-columns: 1fr 1fr; }
+  .contacts-grid { grid-template-columns: 1fr; }
+}
+
+/* ─── UTILITY ─────────────────────────────────────────────────── */
+.text-red    { color: var(--red); }
+.text-yellow { color: var(--yellow); }
+.text-green  { color: var(--green); }
+.text-cyan   { color: var(--cyan); }
+.text-purple { color: var(--purple); }
+.text-muted  { color: var(--text2); }
+.text-bold   { font-weight: 700; }
+.gap-8 { gap: 8px; }
+.mt-8 { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.flex { display: flex; }
+.flex-center { display: flex; align-items: center; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+.w-full { width: 100%; }
+.separator { height: 1px; background: var(--border); margin: 8px 0; }
+
+/* ─── TOAST ───────────────────────────────────────────────────── */
+#toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: var(--radius-sm); padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px; font-size: .78rem;
+  box-shadow: var(--shadow); min-width: 260px; max-width: 340px;
+  animation: slideIn .3s ease;
+}
+.toast svg { width: 16px; height: 16px; flex-shrink: 0; }
+.toast.t-success { border-left: 3px solid var(--green); }
+.toast.t-success svg { color: var(--green); }
+.toast.t-error { border-left: 3px solid var(--red); }
+.toast.t-error svg { color: var(--red); }
+.toast.t-info { border-left: 3px solid var(--accent); }
+.toast.t-info svg { color: var(--accent); }
+.toast.t-warn { border-left: 3px solid var(--yellow); }
+.toast.t-warn svg { color: var(--yellow); }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* ─── EMPTY STATE ─────────────────────────────────────────────── */
+.empty-state { padding: 40px; text-align: center; color: var(--text2); }
+.empty-state svg { width: 40px; height: 40px; margin-bottom: 12px; opacity: .3; }
+.empty-state p { font-size: .8rem; }
+
+/* ─── FILTER BAR ──────────────────────────────────────────────── */
+.filter-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.filter-chip {
+  padding: 4px 10px; border-radius: 99px;
+  font-size: .7rem; font-weight: 600; cursor: pointer;
+  border: 1px solid var(--border); background: var(--bg3); color: var(--text2);
+  transition: all .15s; user-select: none;
+}
+.filter-chip:hover { border-color: var(--border2); color: var(--text); }
+.filter-chip.active { border-color: var(--accent); background: rgba(59,130,246,.15); color: var(--accent); }
+
+/* ─── TIMELINE ────────────────────────────────────────────────── */
+.timeline { display: flex; flex-direction: column; gap: 0; }
+.tl-item { display: flex; gap: 12px; padding-bottom: 16px; position: relative; }
+.tl-item::before {
+  content: ''; position: absolute; left: 15px; top: 28px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.tl-item:last-child::before { display: none; }
+.tl-dot {
+  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; z-index: 1;
+  font-size: .65rem;
+}
+.tl-dot.green  { background: var(--green-bg);  color: var(--green);  border: 1px solid var(--green); }
+.tl-dot.blue   { background: var(--cyan-bg);   color: var(--cyan);   border: 1px solid var(--cyan); }
+.tl-dot.yellow { background: var(--yellow-bg); color: var(--yellow); border: 1px solid var(--yellow); }
+.tl-dot.red    { background: var(--red-bg);    color: var(--red);    border: 1px solid var(--red); }
+.tl-dot.grey   { background: var(--bg4);       color: var(--text3);  border: 1px solid var(--border); }
+.tl-content { flex: 1; }
+.tl-title { font-size: .8rem; font-weight: 600; margin-bottom: 2px; }
+.tl-desc  { font-size: .72rem; color: var(--text2); }
+.tl-time  { font-size: .65rem; color: var(--text3); margin-top: 2px; }
+
+/* kit status in table */
+.kit-row-expired { background: rgba(239,68,68,.05); }
+.kit-row-expiring { background: rgba(245,158,11,.05); }
+.row-actions { display: flex; gap: 4px; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!--   TOAST CONTAINER                                           -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="toast-container"></div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!--   MODAL — RESUPPLY REQUEST                                  -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="modal-resupply" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>
+      <h2>Request Resupply</h2>
+      <div class="modal-close" onclick="closeModal('modal-resupply')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Study</label>
+          <select class="form-control" id="rs-study">
+            <option>AURORA-301</option><option>NEXUS-102</option><option>SOLARIS-004</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Site</label>
+          <select class="form-control" id="rs-site">
+            <option>St. Mary's Medical Center</option>
+            <option>Berlin University Hospital</option>
+            <option>Toronto General Hospital</option>
+            <option>Paris Lariboisière</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Requested Quantity (Kits)</label>
+          <input type="number" class="form-control" value="20" min="1" />
+        </div>
+        <div class="form-group">
+          <label>Urgency</label>
+          <select class="form-control">
+            <option>Standard (5–7 days)</option>
+            <option>Urgent (2–3 days)</option>
+            <option>Critical – Next Day</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Drug / Product</label>
+        <select class="form-control">
+          <option>AUR-301-A – Capsule 50mg</option>
+          <option>AUR-301-P – Placebo</option>
+          <option>NXS-102-B – Injection 100mg/2mL</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Logistics Provider</label>
+        <select class="form-control">
+          <option>DHL Life Sciences</option>
+          <option>World Courier</option>
+          <option>Marken (UPS)</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Notes for Warehouse</label>
+        <textarea class="form-control" rows="3" placeholder="e.g. Temperature-sensitive, include ice packs…"></textarea>
+      </div>
+      <div class="safety-indicator">
+        <span class="si-label">Current Stock:</span>
+        <div class="si-bar">
+          <div class="si-fill fill-red" style="width:22%"></div>
+          <div class="si-threshold" style="left:40%"></div>
+        </div>
+        <span class="si-val text-red">11</span>
+        <span class="si-thresh-label">Threshold: 25</span>
+      </div>
+      <div class="form-hint">⚠ Stock is below safety threshold. Order flagged as urgent by default.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-resupply')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitResupply()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+        Submit Request
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!--   MODAL — RECONCILE KIT                                     -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="modal-reconcile" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <h2>Drug Reconciliation — Kit Update</h2>
+      <div class="modal-close" onclick="closeModal('modal-reconcile')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Kit ID</label>
+          <input class="form-control" id="recon-kit-id" value="KIT-AUR-0094" readonly style="background:var(--bg4);" />
+        </div>
+        <div class="form-group">
+          <label>Current Status</label>
+          <input class="form-control" value="At Site — Available" readonly style="background:var(--bg4);" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Physical Verification</label>
+        <select class="form-control" id="recon-action">
+          <option value="">— Select outcome —</option>
+          <option value="verified">✓ Verified — Matches system</option>
+          <option value="dispensed">Dispensed to patient</option>
+          <option value="expired">Expired — Mark for destruction</option>
+          <option value="damaged">Damaged / Broken</option>
+          <option value="lost">Missing / Cannot locate</option>
+          <option value="returned">Returned to pharmacy</option>
+        </select>
+      </div>
+      <div class="form-group" id="recon-patient-group" style="display:none">
+        <label>Patient ID (if dispensed)</label>
+        <input class="form-control" placeholder="e.g. PT-0042" />
+      </div>
+      <div class="form-group">
+        <label>Verification Date & Time</label>
+        <input type="datetime-local" class="form-control" id="recon-datetime" />
+      </div>
+      <div class="form-group">
+        <label>Verified By (CRA Initials)</label>
+        <input class="form-control" value="S.K." />
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea class="form-control" rows="2" placeholder="Any discrepancies, damage notes, or observations…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-reconcile')">Cancel</button>
+      <button class="btn btn-warning" id="recon-flag-btn" onclick="flagKit()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/></svg>
+        Flag Discrepancy
+      </button>
+      <button class="btn btn-primary" onclick="saveReconcile()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        Save &amp; Log
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!--   MODAL — SHIPMENT DETAIL                                   -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="modal-shipment" class="modal-overlay hidden">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="1"/><path stroke-linecap="round" stroke-linejoin="round" d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      <h2 id="modal-ship-title">Shipment SHP-7821</h2>
+      <div class="modal-close" onclick="closeModal('modal-shipment')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="progress-steps" id="modal-ship-steps"></div>
+      <div class="separator"></div>
+      <div id="modal-ship-timeline"></div>
+      <div class="separator"></div>
+      <div id="modal-ship-contacts"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!--   APP SHELL                                                 -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- ──── SIDEBAR ──────────────────────────────────────────── -->
+  <nav id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">C</div>
+      <div>
+        <div class="logo-text">ClinTrack</div>
+        <div class="logo-sub">Drug Accountability</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">Navigation</div>
+    <div class="nav-item active" onclick="switchView('overview')" id="nav-overview">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Overview</span>
+    </div>
+    <div class="nav-item" onclick="switchView('inventory')" id="nav-inventory">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>
+      <span>Kit Inventory</span>
+      <span class="badge yellow">3</span>
+    </div>
+    <div class="nav-item" onclick="switchView('shipments')" id="nav-shipments">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="1"/><path stroke-linecap="round" stroke-linejoin="round" d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      <span>Shipments</span>
+      <span class="badge">2</span>
+    </div>
+    <div class="nav-item" onclick="switchView('reconcile')" id="nav-reconcile">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span>Reconciliation</span>
+    </div>
+    <div class="nav-item" onclick="switchView('flow')" id="nav-flow">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      <span>Supply Flow</span>
+    </div>
+    <div class="nav-item" onclick="switchView('alerts')" id="nav-alerts">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      <span>Alerts</span>
+      <span class="badge">5</span>
+    </div>
+
+    <div class="sidebar-section" style="margin-top:8px">Active Studies</div>
+    <div class="sidebar-study active" onclick="selectStudy('AURORA-301')" id="study-AURORA-301">
+      <div class="study-dot" style="background:#3b82f6"></div>
+      <div>
+        <div class="study-name">AURORA-301</div>
+        <div class="study-id">Phase III · 6 Sites</div>
+      </div>
+    </div>
+    <div class="sidebar-study" onclick="selectStudy('NEXUS-102')" id="study-NEXUS-102">
+      <div class="study-dot" style="background:#a855f7"></div>
+      <div>
+        <div class="study-name">NEXUS-102</div>
+        <div class="study-id">Phase II · 4 Sites</div>
+      </div>
+    </div>
+    <div class="sidebar-study" onclick="selectStudy('SOLARIS-004')" id="study-SOLARIS-004">
+      <div class="study-dot" style="background:#22c55e"></div>
+      <div>
+        <div class="study-name">SOLARIS-004</div>
+        <div class="study-id">Phase II · 3 Sites</div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="avatar">SK</div>
+      <div class="footer-info">
+        <div style="font-size:.75rem;font-weight:600">Sarah K.</div>
+        <div style="font-size:.65rem;color:var(--text2)">CRA · Region EU</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ──── MAIN ──────────────────────────────────────────────── -->
+  <div id="main">
+    <!-- TOP BAR -->
+    <div id="topbar">
+      <div>
+        <div class="topbar-title" id="topbar-title">Overview</div>
+        <div class="topbar-breadcrumb">Study: <span id="topbar-study">AURORA-301</span> · <span id="topbar-date"></span></div>
+      </div>
+      <div class="topbar-right">
+        <div class="search-box">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input placeholder="Search Kit ID, site, shipment…" id="global-search" oninput="handleSearch(this.value)" />
+        </div>
+        <button class="btn btn-ghost" onclick="openModal('modal-resupply')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          Request Resupply
+        </button>
+        <div class="icon-btn" data-tip="Notifications" onclick="switchView('alerts')">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          <div class="notif-dot"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE CONTAINER -->
+    <div id="page-container">
+
+      <!-- ══════════════════════════════════════════════════ -->
+      <!-- VIEW: OVERVIEW                                     -->
+      <!-- ══════════════════════════════════════════════════ -->
+      <div id="view-overview" class="view active">
+
+        <!-- Alert Banner -->
+        <div class="alert-banner" onclick="switchView('alerts')">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+          <div>
+            <strong>3 critical actions required</strong> — Berlin site is below safety stock (11/25 kits). 2 kits at Paris site expire in 6 days. 1 shipment delayed.
+          </div>
+          <span class="alert-action">View Alerts →</span>
+        </div>
+
+        <!-- KPI Row -->
+        <div class="kpi-row">
+          <div class="kpi-card">
+            <div class="kpi-label">Total Kits (Study)</div>
+            <div class="kpi-value">247</div>
+            <div class="kpi-sub"><span class="up">↑ 20</span> received this week</div>
+          </div>
+          <div class="kpi-card warn">
+            <div class="kpi-label">Sites Below Safety Stock</div>
+            <div class="kpi-value text-yellow">2</div>
+            <div class="kpi-sub"><span class="warn">⚠ Requires action</span></div>
+          </div>
+          <div class="kpi-card alert">
+            <div class="kpi-label">Expiring ≤ 30 days</div>
+            <div class="kpi-value text-red">7</div>
+            <div class="kpi-sub"><span class="down">2 expire in &lt; 7 days</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">In Transit</div>
+            <div class="kpi-value text-cyan">34</div>
+            <div class="kpi-sub">3 active shipments</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Pending Reconciliation</div>
+            <div class="kpi-value text-purple">12</div>
+            <div class="kpi-sub">Across 3 sites</div>
+          </div>
+        </div>
+
+        <!-- Site Grid -->
+        <div class="card">
+          <div class="card-header">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            <h2>Site Inventory Status — AURORA-301</h2>
+            <div class="card-actions">
+              <div class="filter-bar">
+                <span class="filter-chip active" onclick="filterSites(this,'all')">All</span>
+                <span class="filter-chip" onclick="filterSites(this,'critical')">Critical</span>
+                <span class="filter-chip" onclick="filterSites(this,'warning')">Warning</span>
+                <span class="filter-chip" onclick="filterSites(this,'ok')">OK</span>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="site-grid" id="site-grid"></div>
+          </div>
+        </div>
+
+      </div><!-- /view-overview -->
+
+      <!-- ══════════════════════════════════════════════════ -->
+      <!-- VIEW: INVENTORY                                    -->
+      <!-- ══════════════════════════════════════════════════ -->
+      <div id="view-inventory" class="view">
+        <div class="section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>
+          <h2>Kit-Level Inventory</h2>
+          <div class="section-actions">
+            <div class="filter-bar">
+              <span class="filter-chip active" onclick="filterKits(this,'all')">All</span>
+              <span class="filter-chip" onclick="filterKits(this,'available')">Available</span>
+              <span class="filter-chip" onclick="filterKits(this,'dispensed')">Dispensed</span>
+              <span class="filter-chip" onclick="filterKits(this,'expiring')">Expiring Soon</span>
+              <span class="filter-chip" onclick="filterKits(this,'expired')">Expired</span>
+              <span class="filter-chip" onclick="filterKits(this,'quarantine')">Quarantine</span>
+            </div>
+            <button class="btn btn-ghost" onclick="exportCSV()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Export
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header" style="flex-wrap:wrap;gap:8px">
+            <h2>Kit Register</h2>
+            <select class="form-control" style="width:auto;padding:4px 10px;font-size:.75rem" id="kit-site-filter" onchange="renderKitTable()">
+              <option value="all">All Sites</option>
+              <option>St. Mary's Medical Center</option>
+              <option>Berlin University Hospital</option>
+              <option>Toronto General Hospital</option>
+              <option>Paris Lariboisière</option>
+              <option>Madrid Hospital Clínico</option>
+              <option>Warehouse</option>
+            </select>
+            <span id="kit-count" class="text-muted" style="font-size:.72rem;margin-left:4px"></span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Kit ID</th>
+                  <th>Product</th>
+                  <th>Site / Location</th>
+                  <th>Status</th>
+                  <th>SLED (Expiry)</th>
+                  <th>Days Left</th>
+                  <th>Batch No.</th>
+                  <th>Received</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="kit-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div><!-- /view-inventory -->
+
+      <!-- ══════════════════════════════════════════════════ -->
+      <!-- VIEW: SHIPMENTS                                    -->
+      <!-- ══════════════════════════════════════════════════ -->
+      <div id="view-shipments" class="view">
+        <div class="section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="1"/><path stroke-linecap="round" stroke-linejoin="round" d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          <h2>Shipment Tracker</h2>
+          <div class="section-actions">
+            <div class="filter-bar" id="shipment-filters">
+              <span class="filter-chip active" onclick="filterShipments(this,'all')">All</span>
+              <span class="filter-chip" onclick="filterShipments(this,'in_transit')">In Transit</span>
+              <span class="filter-chip" onclick="filterShipments(this,'pending')">Pending</span>
+              <span class="filter-chip" onclick="filterShipments(this,'delivered')">Delivered</span>
+              <span class="filter-chip" onclick="filterShipments(this,'delayed')">Delayed</span>
+            </div>
+            <button class="btn btn-primary" onclick="openModal('modal-resupply')">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+              New Request
+            </button>
+          </div>
+        </div>
+        <div id="shipment-list"></div>
+      </div><!-- /view-shipments -->
+
+      <!-- ══════════════════════════════════════════════════ -->
+      <!-- VIEW: RECONCILIATION                              -->
+      <!-- ══════════════════════════════════════════════════ -->
+      <div id="view-reconcile" class="view">
+        <div class="section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <h2>Drug Accountability & Reconciliation</h2>
+          <div class="section-actions">
+            <select class="form-control" style="width:auto;padding:4px 10px;font-size:.75rem" id="recon-site-select" onchange="renderReconView()">
+              <option>St. Mary's Medical Center</option>
+              <option>Berlin University Hospital</option>
+              <option>Toronto General Hospital</option>
+              <option>Paris Lariboisière</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="recon-summary" id="recon-summary-row"></div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+              <h2>Pending Verification</h2>
+              <div class="card-actions">
+                <button class="btn btn-ghost" style="font-size:.7rem" onclick="reconSelectAll()">Select All</button>
+              </div>
+            </div>
+            <div class="table-wrap" style="max-height:320px;overflow-y:auto">
+              <table>
+                <thead>
+                  <tr>
+                    <th><input type="checkbox" id="recon-check-all" onchange="toggleAllRecon(this)" /></th>
+                    <th>Kit ID</th>
+                    <th>Expiry</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="recon-pending-tbody"></tbody>
+              </table>
+            </div>
+            <div style="padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:8px">
+              <button class="btn btn-success" onclick="bulkVerify()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                Verify Selected
+              </button>
+              <button class="btn btn-danger" onclick="bulkFlag()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/></svg>
+                Flag Discrepancy
+              </button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+              <h2>Safety Stock Monitor</h2>
+            </div>
+            <div class="card-body" id="safety-stock-body"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <h2>Reconciliation History (Last 30 Days)</h2>
+          </div>
+          <div class="card-body">
+            <div class="timeline" id="recon-history"></div>
+          </div>
+        </div>
+      </div><!-- /view-reconcile -->
+
+      <!-- ══════════════════════════════════════════════════ -->
+      <!-- VIEW: SUPPLY FLOW                                 -->
+      <!-- ══════════════════════════════════════════════════ -->
+      <div id="view-flow" class="view">
+        <div class="section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          <h2>Supply Chain Flow — AURORA-301</h2>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h2>Kit Flow Overview</h2></div>
+          <div class="card-body">
+            <div class="flow-container" id="flow-diagram"></div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header">
+              <h2>Warehouse Status</h2>
+              <div class="card-actions">
+                <span class="mini-badge mb-green">Online</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div class="safety-indicator">
+                  <span class="si-label">AUR-301-A</span>
+                  <div class="si-bar">
+                    <div class="si-fill fill-green" style="width:72%"></div>
+                    <div class="si-threshold" style="left:30%"></div>
+                  </div>
+                  <span class="si-val text-green">180</span>
+                </div>
+                <div class="safety-indicator">
+                  <span class="si-label">AUR-301-P</span>
+                  <div class="si-bar">
+                    <div class="si-fill fill-yellow" style="width:38%"></div>
+                    <div class="si-threshold" style="left:40%"></div>
+                  </div>
+                  <span class="si-val text-yellow">94</span>
+                </div>
+              </div>
+              <div class="separator"></div>
+              <div style="font-size:.75rem;font-weight:600;margin-bottom:8px">Warehouse Contacts</div>
+              <div class="contact-item">
+                <div class="contact-role">Depot Manager</div>
+                <div class="contact-name">Marcus Webb</div>
+                <div class="contact-info">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                  m.webb@pharmalogistics.com
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h2>Active Site Contacts</h2></div>
+            <div class="card-body" id="flow-contacts"></div>
+          </div>
+        </div>
+      </div><!-- /view-flow -->
+
+      <!-- ══════════════════════════════════════════════════ -->
+      <!-- VIEW: ALERTS                                       -->
+      <!-- ══════════════════════════════════════════════════ -->
+      <div id="view-alerts" class="view">
+        <div class="section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+          <h2>Action Centre & Alerts</h2>
+          <span class="mini-badge mb-red" style="margin-left:6px">5 Active</span>
+        </div>
+
+        <div class="tabs">
+          <div class="tab active" onclick="switchAlertTab(this,'critical')">🔴 Critical (2)</div>
+          <div class="tab" onclick="switchAlertTab(this,'warning')">🟡 Warning (2)</div>
+          <div class="tab" onclick="switchAlertTab(this,'info')">🔵 Info (1)</div>
+          <div class="tab" onclick="switchAlertTab(this,'resolved')">✅ Resolved</div>
+        </div>
+
+        <div id="alert-list-container"></div>
+      </div><!-- /view-alerts -->
+
+    </div><!-- /page-container -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   DATA
+   ════════════════════════════════════════════════════════════════ */
+const TODAY = new Date();
+function daysFrom(dateStr) {
+  return Math.round((new Date(dateStr) - TODAY) / 86400000);
+}
+function fmtDate(d) {
+  return new Date(d).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
+}
+function addDays(n) {
+  const d = new Date(TODAY); d.setDate(d.getDate()+n); return d.toISOString().split('T')[0];
+}
+
+const SITES = [
+  {
+    id:'SMC', name:"St. Mary's Medical Center", city:"London, UK",
+    study:'AURORA-301', status:'ok',
+    available:42, safety:25, expiring:1, inTransit:0, pending:0,
+    lastVisit: addDays(-3), nextShipETA: null,
+    coordinator: {name:"Dr. Emma Clarke", phone:"+44 20 7946 0812", email:"e.clarke@stmarys.nhs.uk"},
+    pharmacist:  {name:"John Patel", phone:"+44 20 7946 0831", email:"j.patel@stmarys.nhs.uk"},
+    receiver:    {name:"Nurse Alice Brown", phone:"+44 20 7946 0840"},
+    logistics:   {name:"DHL Life Sciences", phone:"+44 800 345 7777", tracking:"dhl.com/track"},
+  },
+  {
+    id:'BUH', name:"Berlin University Hospital", city:"Berlin, DE",
+    study:'AURORA-301', status:'critical',
+    available:11, safety:25, expiring:0, inTransit:14, pending:1,
+    lastVisit: addDays(-10), nextShipETA: addDays(2),
+    coordinator: {name:"Dr. Hans Müller", phone:"+49 30 8445 1200", email:"h.mueller@charite.de"},
+    pharmacist:  {name:"Lena Fischer", phone:"+49 30 8445 1234", email:"l.fischer@charite.de"},
+    receiver:    {name:"Stefan Bauer", phone:"+49 30 8445 1250"},
+    logistics:   {name:"World Courier", phone:"+49 800 965 3224", tracking:"worldcourier.com/track"},
+  },
+  {
+    id:'TGH', name:"Toronto General Hospital", city:"Toronto, CA",
+    study:'AURORA-301', status:'warning',
+    available:28, safety:25, expiring:2, inTransit:0, pending:0,
+    lastVisit: addDays(-7), nextShipETA: null,
+    coordinator: {name:"Dr. Sandra Lee", phone:"+1 416 340 4800", email:"s.lee@uhn.ca"},
+    pharmacist:  {name:"Paul Kim", phone:"+1 416 340 4810", email:"p.kim@uhn.ca"},
+    receiver:    {name:"Maria Santos", phone:"+1 416 340 4820"},
+    logistics:   {name:"Marken (UPS)", phone:"+1 800 456 7890", tracking:"marken.com/track"},
+  },
+  {
+    id:'PAR', name:"Paris Lariboisière", city:"Paris, FR",
+    study:'AURORA-301', status:'warning',
+    available:31, safety:20, expiring:2, inTransit:0, pending:0,
+    lastVisit: addDays(-5), nextShipETA: null,
+    coordinator: {name:"Dr. Camille Dubois", phone:"+33 1 49 95 6200", email:"c.dubois@aphp.fr"},
+    pharmacist:  {name:"Isabelle Martin", phone:"+33 1 49 95 6220", email:"i.martin@aphp.fr"},
+    receiver:    {name:"Thomas Lefebvre", phone:"+33 1 49 95 6230"},
+    logistics:   {name:"DHL Life Sciences", phone:"+33 800 354 000", tracking:"dhl.com/track"},
+  },
+  {
+    id:'MAD', name:"Madrid Hospital Clínico", city:"Madrid, ES",
+    study:'AURORA-301', status:'ok',
+    available:56, safety:30, expiring:0, inTransit:0, pending:0,
+    lastVisit: addDays(-2), nextShipETA: null,
+    coordinator: {name:"Dr. Pedro García", phone:"+34 91 330 3000", email:"p.garcia@huc.es"},
+    pharmacist:  {name:"Ana López", phone:"+34 91 330 3100", email:"a.lopez@huc.es"},
+    receiver:    {name:"Carlos Fernández", phone:"+34 91 330 3200"},
+    logistics:   {name:"World Courier", phone:"+34 900 827 767", tracking:"worldcourier.com/track"},
+  },
+  {
+    id:'AMS', name:"Amsterdam UMC", city:"Amsterdam, NL",
+    study:'AURORA-301', status:'ok',
+    available:39, safety:20, expiring:0, inTransit:0, pending:0,
+    lastVisit: addDays(-14), nextShipETA: null,
+    coordinator: {name:"Dr. Roos de Vries", phone:"+31 20 566 9111", email:"r.devries@aumc.nl"},
+    pharmacist:  {name:"Jan Visser", phone:"+31 20 566 9200", email:"j.visser@aumc.nl"},
+    receiver:    {name:"Eva Smit", phone:"+31 20 566 9210"},
+    logistics:   {name:"DHL Life Sciences", phone:"+31 800 0552", tracking:"dhl.com/track"},
+  },
+];
+
+const KITS = [
+  {id:'KIT-AUR-0001',product:'AUR-301-A 50mg',site:"St. Mary's Medical Center",status:'available',expiry:addDays(180),batch:'B2024-03',received:addDays(-20)},
+  {id:'KIT-AUR-0002',product:'AUR-301-A 50mg',site:"St. Mary's Medical Center",status:'available',expiry:addDays(145),batch:'B2024-03',received:addDays(-20)},
+  {id:'KIT-AUR-0003',product:'AUR-301-P Placebo',site:"St. Mary's Medical Center",status:'dispensed',expiry:addDays(90),batch:'B2024-02',received:addDays(-40)},
+  {id:'KIT-AUR-0004',product:'AUR-301-A 50mg',site:"St. Mary's Medical Center",status:'available',expiry:addDays(25),batch:'B2024-01',received:addDays(-60)},
+  {id:'KIT-AUR-0005',product:'AUR-301-P Placebo',site:'Berlin University Hospital',status:'available',expiry:addDays(200),batch:'B2024-04',received:addDays(-5)},
+  {id:'KIT-AUR-0006',product:'AUR-301-A 50mg',site:'Berlin University Hospital',status:'available',expiry:addDays(160),batch:'B2024-04',received:addDays(-5)},
+  {id:'KIT-AUR-0007',product:'AUR-301-A 50mg',site:'Berlin University Hospital',status:'available',expiry:addDays(3),batch:'B2023-12',received:addDays(-90)},
+  {id:'KIT-AUR-0008',product:'AUR-301-P Placebo',site:'Toronto General Hospital',status:'available',expiry:addDays(22),batch:'B2024-01',received:addDays(-50)},
+  {id:'KIT-AUR-0009',product:'AUR-301-A 50mg',site:'Toronto General Hospital',status:'available',expiry:addDays(8),batch:'B2023-12',received:addDays(-95)},
+  {id:'KIT-AUR-0010',product:'AUR-301-P Placebo',site:'Toronto General Hospital',status:'quarantine',expiry:addDays(-2),batch:'B2023-11',received:addDays(-120)},
+  {id:'KIT-AUR-0011',product:'AUR-301-A 50mg',site:"Paris Lariboisière",status:'available',expiry:addDays(6),batch:'B2023-12',received:addDays(-88)},
+  {id:'KIT-AUR-0012',product:'AUR-301-P Placebo',site:"Paris Lariboisière",status:'available',expiry:addDays(5),batch:'B2023-12',received:addDays(-88)},
+  {id:'KIT-AUR-0013',product:'AUR-301-A 50mg',site:"Madrid Hospital Clínico",status:'available',expiry:addDays(300),batch:'B2024-05',received:addDays(-2)},
+  {id:'KIT-AUR-0014',product:'AUR-301-P Placebo',site:"Madrid Hospital Clínico",status:'dispensed',expiry:addDays(280),batch:'B2024-05',received:addDays(-2)},
+  {id:'KIT-AUR-0015',product:'AUR-301-A 50mg',site:'Warehouse',status:'in_warehouse',expiry:addDays(365),batch:'B2024-06',received:addDays(-1)},
+  {id:'KIT-AUR-0016',product:'AUR-301-A 50mg',site:'Warehouse',status:'in_warehouse',expiry:addDays(365),batch:'B2024-06',received:addDays(-1)},
+  {id:'KIT-AUR-0017',product:'AUR-301-P Placebo',site:'In Transit (DHL)',status:'in_transit',expiry:addDays(250),batch:'B2024-05',received:null},
+  {id:'KIT-AUR-0018',product:'AUR-301-A 50mg',site:'In Transit (DHL)',status:'in_transit',expiry:addDays(250),batch:'B2024-05',received:null},
+  {id:'KIT-AUR-0094',product:'AUR-301-A 50mg',site:"St. Mary's Medical Center",status:'available',expiry:addDays(45),batch:'B2024-02',received:addDays(-35)},
+];
+
+const SHIPMENTS = [
+  {
+    id:'SHP-7821', study:'AURORA-301',
+    from:'Warehouse (Frankfurt)', to:'Berlin University Hospital',
+    carrier:'World Courier', trackingNo:'WC-4432-DE',
+    kits:14, status:'in_transit', stepIdx:2,
+    requestDate:addDays(-4), estimatedDelivery:addDays(2),
+    steps:['Order Placed','Picked & Packed','Collected by Courier','Customs Clearance','Delivered to Site','Received by Pharmacist'],
+    completedSteps:2,
+    delayReason:null,
+    contact:{name:'World Courier DE', phone:'+49 800 965 3224', email:'de@worldcourier.com'},
+  },
+  {
+    id:'SHP-7805', study:'AURORA-301',
+    from:'Warehouse (Frankfurt)', to:"St. Mary's Medical Center",
+    carrier:'DHL Life Sciences', trackingNo:'JD0142789320000',
+    kits:20, status:'delivered', stepIdx:5,
+    requestDate:addDays(-12), estimatedDelivery:addDays(-3),
+    steps:['Order Placed','Picked & Packed','Collected by Courier','Customs Clearance','Delivered to Site','Received by Pharmacist'],
+    completedSteps:5,
+    delayReason:null,
+    contact:{name:'DHL Life Sciences UK', phone:'+44 800 345 7777', email:'lifesciences@dhl.com'},
+  },
+  {
+    id:'SHP-7799', study:'NEXUS-102',
+    from:'Warehouse (Lyon)', to:'Toronto General Hospital',
+    carrier:'Marken (UPS)', trackingNo:'1Z7E49310303549864',
+    kits:8, status:'delayed', stepIdx:2,
+    requestDate:addDays(-8), estimatedDelivery:addDays(-1),
+    steps:['Order Placed','Picked & Packed','Collected by Courier','Customs Clearance','Delivered to Site','Received by Pharmacist'],
+    completedSteps:2,
+    delayReason:'Customs hold – awaiting import permit documentation.',
+    contact:{name:'Marken CA', phone:'+1 800 456 7890', email:'ca@marken.com'},
+  },
+  {
+    id:'SHP-7815', study:'AURORA-301',
+    from:'Warehouse (Frankfurt)', to:"Paris Lariboisière",
+    carrier:'DHL Life Sciences', trackingNo:'JD0142789320099',
+    kits:15, status:'pending', stepIdx:0,
+    requestDate:addDays(-1), estimatedDelivery:addDays(6),
+    steps:['Order Placed','Picked & Packed','Collected by Courier','Customs Clearance','Delivered to Site','Received by Pharmacist'],
+    completedSteps:0,
+    delayReason:null,
+    contact:{name:'DHL Life Sciences FR', phone:'+33 800 354 000', email:'fr@dhl.com'},
+  },
+];
+
+const ALERTS = [
+  {
+    id:'ALT-01', type:'critical', icon:'red',
+    title:'Berlin site below safety stock',
+    detail:'Available: 11 kits / Safety stock: 25 kits. Shipment SHP-7821 in transit. ETA: '+fmtDate(addDays(2))+'.',
+    time:'2 hours ago', study:'AURORA-301', site:'Berlin University Hospital',
+    actions:[{label:'Track Shipment',fn:'trackShipment("SHP-7821")'},
+             {label:'Request More',fn:'openModal("modal-resupply")'}],
+  },
+  {
+    id:'ALT-02', type:'critical', icon:'red',
+    title:'SHP-7799 delayed — customs hold',
+    detail:'Shipment to Toronto (8 kits) overdue by 1 day. Marken: awaiting import permit.',
+    time:'5 hours ago', study:'NEXUS-102', site:'Toronto General Hospital',
+    actions:[{label:'Contact Logistics',fn:'showToast("Calling Marken CA…","info")'},
+             {label:'View Shipment',fn:'openShipmentModal("SHP-7799")'}],
+  },
+  {
+    id:'ALT-03', type:'warning', icon:'yellow',
+    title:'2 kits expiring in ≤7 days (Paris)',
+    detail:'KIT-AUR-0011 & KIT-AUR-0012 SLED within 5–6 days. Physical removal required.',
+    time:'1 day ago', study:'AURORA-301', site:"Paris Lariboisière",
+    actions:[{label:'Start Reconciliation',fn:'switchView("reconcile")'},
+             {label:'Order Replacement',fn:'openModal("modal-resupply")'}],
+  },
+  {
+    id:'ALT-04', type:'warning', icon:'yellow',
+    title:'KIT-AUR-0010 expired (Toronto)',
+    detail:'Expired 2 days ago. Quarantined in system but not yet physically removed. Inform pharmacist Paul Kim.',
+    time:'2 days ago', study:'AURORA-301', site:'Toronto General Hospital',
+    actions:[{label:'Reconcile Kit',fn:'openReconcileKit("KIT-AUR-0010")'}],
+  },
+  {
+    id:'ALT-05', type:'info', icon:'blue',
+    title:'SHP-7805 received at St. Mary\'s',
+    detail:'20 kits confirmed received by pharmacist John Patel. Awaiting system reconciliation.',
+    time:'3 days ago', study:'AURORA-301', site:"St. Mary's Medical Center",
+    actions:[{label:'Reconcile Now',fn:'switchView("reconcile")'}],
+  },
+];
+
+const RECON_HISTORY = [
+  {dot:'green', title:'Reconciliation completed — St. Mary\'s', desc:'42 kits verified. 0 discrepancies. Signed by J. Patel & S.K.', time: fmtDate(addDays(-3))},
+  {dot:'yellow', title:'Kit flagged — KIT-AUR-0010 expired', desc:'Toronto General. Kit quarantined. Replacement order SHP-7815 initiated.', time: fmtDate(addDays(-3))},
+  {dot:'blue', title:'Shipment SHP-7805 received', desc:"St. Mary's: 20 kits received. Waybill signed by Nurse Alice Brown.", time: fmtDate(addDays(-4))},
+  {dot:'red', title:'Discrepancy reported — Berlin', desc:'System showed 25 kits, only 11 confirmed on shelf. Investigation opened.', time: fmtDate(addDays(-10))},
+  {dot:'green', title:'Reconciliation completed — Madrid', desc:'56 kits verified. Temp logs reviewed. No issues.', time: fmtDate(addDays(-2))},
+];
+
+/* ════════════════════════════════════════════════════════════════
+   UI STATE
+   ════════════════════════════════════════════════════════════════ */
+let currentView = 'overview';
+let currentStudy = 'AURORA-301';
+let kitFilter = 'all';
+let shipmentFilter = 'all';
+let alertTab = 'critical';
+let siteFilter = 'all';
+
+/* ════════════════════════════════════════════════════════════════
+   INIT
+   ════════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  // Set today's date in topbar
+  document.getElementById('topbar-date').textContent = TODAY.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long',year:'numeric'});
+  // Pre-fill reconcile datetime
+  const dtInput = document.getElementById('recon-datetime');
+  if (dtInput) dtInput.value = new Date().toISOString().slice(0,16);
+  // Reconcile action change
+  document.getElementById('recon-action')?.addEventListener('change', e => {
+    document.getElementById('recon-patient-group').style.display = e.target.value === 'dispensed' ? 'flex' : 'none';
+  });
+
+  renderSiteGrid();
+  renderKitTable();
+  renderShipments();
+  renderReconView();
+  renderFlowDiagram();
+  renderAlerts();
+  renderFlowContacts();
+});
+
+/* ════════════════════════════════════════════════════════════════
+   NAVIGATION
+   ════════════════════════════════════════════════════════════════ */
+function switchView(name) {
+  currentView = name;
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-'+name)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  document.getElementById('nav-'+name)?.classList.add('active');
+  const titles = {overview:'Overview',inventory:'Kit Inventory',shipments:'Shipment Tracker',
+                  reconcile:'Reconciliation',flow:'Supply Flow',alerts:'Action Centre'};
+  document.getElementById('topbar-title').textContent = titles[name] || name;
+}
+
+function selectStudy(id) {
+  currentStudy = id;
+  document.querySelectorAll('.sidebar-study').forEach(s => s.classList.remove('active'));
+  document.getElementById('study-'+id)?.classList.add('active');
+  document.getElementById('topbar-study').textContent = id;
+  renderSiteGrid();
+  showToast('Switched to study '+id,'info');
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SITE GRID
+   ════════════════════════════════════════════════════════════════ */
+function filterSites(el, f) {
+  siteFilter = f;
+  document.querySelectorAll('#view-overview .filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderSiteGrid();
+}
+
+function renderSiteGrid() {
+  const grid = document.getElementById('site-grid');
+  const sites = SITES.filter(s => s.study === currentStudy && (siteFilter === 'all' || s.status === siteFilter || (siteFilter==='warning' && s.status==='warning')));
+  if (!sites.length) { grid.innerHTML = '<div class="empty-state"><p>No sites match this filter.</p></div>'; return; }
+  grid.innerHTML = sites.map(s => {
+    const pct = Math.min(100, Math.round(s.available / (s.safety*2) * 100));
+    const fillClass = s.available < s.safety ? 'fill-red' : s.available < s.safety*1.5 ? 'fill-yellow' : 'fill-green';
+    const statusMap = {ok:'pill-ok',critical:'pill-critical',warning:'pill-warn'};
+    const statusLabel = {ok:'OK',critical:'Critical',warning:'Warning'};
+    return `
+    <div class="site-card ${s.status}" onclick="showToast('${s.name} — full site detail (coming soon)','info')">
+      <div class="site-card-top">
+        <div class="site-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+        </div>
+        <div>
+          <div class="site-name">${s.name}</div>
+          <div class="site-location">${s.city}</div>
+        </div>
+        <span class="site-status-pill ${statusMap[s.status]}">${statusLabel[s.status]}</span>
+      </div>
+      <div class="site-stats">
+        <div class="site-stat${s.available < s.safety ? ' ss-red' : ''}">
+          <div class="ss-val">${s.available}</div>
+          <div class="ss-lbl">Available</div>
+        </div>
+        <div class="site-stat${s.expiring > 0 ? ' ss-warn' : ''}">
+          <div class="ss-val">${s.expiring}</div>
+          <div class="ss-lbl">Expiring</div>
+        </div>
+        <div class="site-stat">
+          <div class="ss-val ${s.inTransit ? 'text-cyan' : ''}">${s.inTransit}</div>
+          <div class="ss-lbl">In Transit</div>
+        </div>
+      </div>
+      <div class="stock-bar-wrap">
+        <div class="stock-bar-label">
+          <span>Stock vs Safety (${s.safety} kits)</span>
+          <span>${pct}%</span>
+        </div>
+        <div class="stock-bar">
+          <div class="stock-fill ${fillClass}" style="width:${pct}%"></div>
+        </div>
+      </div>
+      <div class="site-card-footer">
+        <span>Last visit: ${fmtDate(s.lastVisit)}</span>
+        ${s.nextShipETA ? `<span class="text-cyan">ETA ${fmtDate(s.nextShipETA)}</span>` : ''}
+        ${s.pending ? `<span class="text-purple">${s.pending} pending order</span>` : ''}
+        <button class="btn btn-ghost" style="font-size:.65rem;padding:3px 8px" onclick="event.stopPropagation();openModal('modal-resupply')">+ Resupply</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════════════════════════
+   KIT TABLE
+   ════════════════════════════════════════════════════════════════ */
+function filterKits(el, f) {
+  kitFilter = f;
+  document.querySelectorAll('#view-inventory .filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderKitTable();
+}
+
+function renderKitTable() {
+  const siteF = document.getElementById('kit-site-filter')?.value || 'all';
+  let kits = KITS.filter(k => {
+    if (siteF !== 'all' && k.site !== siteF) return false;
+    if (kitFilter === 'all') return true;
+    if (kitFilter === 'available') return k.status === 'available';
+    if (kitFilter === 'dispensed') return k.status === 'dispensed';
+    if (kitFilter === 'expiring') return daysFrom(k.expiry) >= 0 && daysFrom(k.expiry) <= 30;
+    if (kitFilter === 'expired') return daysFrom(k.expiry) < 0;
+    if (kitFilter === 'quarantine') return k.status === 'quarantine';
+    return true;
+  });
+  document.getElementById('kit-count').textContent = `${kits.length} kits`;
+  const statusBadge = {
+    available: '<span class="mini-badge mb-green">Available</span>',
+    dispensed: '<span class="mini-badge mb-grey">Dispensed</span>',
+    in_transit: '<span class="mini-badge mb-blue">In Transit</span>',
+    in_warehouse: '<span class="mini-badge mb-purple">Warehouse</span>',
+    quarantine: '<span class="mini-badge mb-red">Quarantine</span>',
+    expired: '<span class="mini-badge mb-red">Expired</span>',
+  };
+  const tbody = document.getElementById('kit-tbody');
+  tbody.innerHTML = kits.map(k => {
+    const days = daysFrom(k.expiry);
+    const expiryClass = days < 0 ? 'expiry-critical' : days <= 7 ? 'expiry-critical' : days <= 30 ? 'expiry-near' : 'expiry-ok';
+    const rowClass = days < 0 ? 'kit-row-expired' : days <= 7 ? 'kit-row-expiring' : '';
+    const daysLabel = days < 0 ? `<span class="text-red">Expired ${Math.abs(days)}d ago</span>` : `<span class="${expiryClass}">${days}d</span>`;
+    const badge = k.status === 'expired' || days < 0 ? statusBadge.expired : statusBadge[k.status] || '';
+    const recvd = k.received ? fmtDate(k.received) : '—';
+    return `<tr class="${rowClass}">
+      <td class="mono">${k.id}</td>
+      <td>${k.product}</td>
+      <td>${k.site}</td>
+      <td>${badge}</td>
+      <td class="${expiryClass}">${fmtDate(k.expiry)}</td>
+      <td>${daysLabel}</td>
+      <td class="mono" style="color:var(--text2)">${k.batch}</td>
+      <td style="color:var(--text2)">${recvd}</td>
+      <td>
+        <div class="row-actions">
+          <button class="btn btn-ghost" style="padding:3px 8px;font-size:.65rem" onclick='openReconcileKit("${k.id}")'>Reconcile</button>
+          ${days <= 30 && days >= 0 ? `<button class="btn btn-warning" style="padding:3px 8px;font-size:.65rem" onclick='showToast("Removal notice sent for ${k.id}","warn")'>Remove</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openReconcileKit(kitId) {
+  document.getElementById('recon-kit-id').value = kitId;
+  document.getElementById('recon-datetime').value = new Date().toISOString().slice(0,16);
+  openModal('modal-reconcile');
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SHIPMENTS
+   ════════════════════════════════════════════════════════════════ */
+function filterShipments(el, f) {
+  shipmentFilter = f;
+  document.querySelectorAll('#shipment-filters .filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderShipments();
+}
+
+function renderShipments() {
+  const statusMap = {in_transit:'pill-transit',delivered:'pill-ok',pending:'pill-pending',delayed:'pill-critical'};
+  const labelMap  = {in_transit:'In Transit',delivered:'Delivered',pending:'Pending',delayed:'Delayed'};
+  const shipsFiltered = SHIPMENTS.filter(s => shipmentFilter === 'all' || s.status === shipmentFilter);
+  const list = document.getElementById('shipment-list');
+  if (!shipsFiltered.length) { list.innerHTML = '<div class="card"><div class="empty-state"><p>No shipments match this filter.</p></div></div>'; return; }
+  list.innerHTML = shipsFiltered.map(s => {
+    const stepsHtml = s.steps.map((step, i) => {
+      const isDone = i < s.completedSteps;
+      const isActive = i === s.completedSteps && s.status !== 'delivered';
+      const isWarn = isActive && s.status === 'delayed';
+      const cls = isDone ? 'done' : isWarn ? 'warn' : isActive ? 'active' : '';
+      const connClass = i < s.completedSteps ? 'done' : i === s.completedSteps ? 'active' : '';
+      return `
+        ${i > 0 ? `<div class="step-connector ${i <= s.completedSteps ? 'done' : ''}"></div>` : ''}
+        <div class="step ${cls}">
+          <div class="step-circle">${isDone ? '✓' : i+1}</div>
+          <div class="step-label">${step}</div>
+        </div>`;
+    }).join('');
+
+    const delayBanner = s.delayReason ? `
+      <div style="background:var(--red-bg);border:1px solid rgba(239,68,68,.3);border-radius:6px;padding:8px 12px;font-size:.72rem;color:var(--red);margin-top:10px;display:flex;align-items:center;gap:8px">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+        <strong>Delay Reason:</strong> ${s.delayReason}
+      </div>` : '';
+
+    return `
+    <div class="shipment-card" onclick="openShipmentModal('${s.id}')">
+      <div class="shipment-top">
+        <div>
+          <div class="shipment-id">${s.id}</div>
+          <div class="shipment-route" style="margin-top:3px">
+            ${s.from}
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            ${s.to}
+          </div>
+          <div style="font-size:.68rem;color:var(--text2);margin-top:2px">${s.carrier} · ${s.kits} kits · Study: ${s.study}</div>
+        </div>
+        <div class="shipment-meta">
+          <span class="site-status-pill ${statusMap[s.status]}">${labelMap[s.status]}</span>
+          <div style="margin-top:4px">ETA: ${fmtDate(s.estimatedDelivery)}</div>
+          <div style="font-family:monospace;font-size:.65rem;color:var(--cyan)">${s.trackingNo}</div>
+        </div>
+      </div>
+      <div class="progress-steps">${stepsHtml}</div>
+      ${delayBanner}
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost" style="font-size:.7rem" onclick="event.stopPropagation();showToast('Opening tracking portal for ${s.carrier}…','info')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          Track Online
+        </button>
+        <button class="btn btn-ghost" style="font-size:.7rem" onclick="event.stopPropagation();showToast('Contacting ${s.contact.name}…','info')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+          Call ${s.contact.name}
+        </button>
+        ${s.status !== 'delivered' ? `<button class="btn btn-primary" style="font-size:.7rem" onclick="event.stopPropagation();openModal('modal-resupply')">+ Add Emergency Order</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openShipmentModal(id) {
+  const s = SHIPMENTS.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('modal-ship-title').textContent = `Shipment ${s.id}`;
+  const statusMap = {in_transit:'pill-transit',delivered:'pill-ok',pending:'pill-pending',delayed:'pill-critical'};
+  const labelMap  = {in_transit:'In Transit',delivered:'Delivered',pending:'Pending',delayed:'Delayed'};
+  const stepsHtml = s.steps.map((step, i) => {
+    const isDone = i < s.completedSteps;
+    const isActive = i === s.completedSteps && s.status !== 'delivered';
+    const isWarn = isActive && s.status === 'delayed';
+    const cls = isDone ? 'done' : isWarn ? 'warn' : isActive ? 'active' : '';
+    return `
+      ${i > 0 ? `<div class="step-connector ${i <= s.completedSteps ? 'done' : ''}"></div>` : ''}
+      <div class="step ${cls}">
+        <div class="step-circle">${isDone ? '✓' : i+1}</div>
+        <div class="step-label">${step}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('modal-ship-steps').innerHTML = stepsHtml;
+
+  document.getElementById('modal-ship-timeline').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div><div style="font-size:.65rem;color:var(--text2)">ROUTE</div><div style="font-weight:600;font-size:.8rem">${s.from} → ${s.to}</div></div>
+      <div><div style="font-size:.65rem;color:var(--text2)">STATUS</div><span class="site-status-pill ${statusMap[s.status]}">${labelMap[s.status]}</span></div>
+      <div><div style="font-size:.65rem;color:var(--text2)">CARRIER</div><div style="font-size:.8rem">${s.carrier}</div></div>
+      <div><div style="font-size:.65rem;color:var(--text2)">TRACKING NO.</div><div class="mono" style="font-size:.75rem;color:var(--cyan)">${s.trackingNo}</div></div>
+      <div><div style="font-size:.65rem;color:var(--text2)">KITS</div><div style="font-weight:700;font-size:.8rem">${s.kits}</div></div>
+      <div><div style="font-size:.65rem;color:var(--text2)">ETA</div><div style="font-size:.8rem">${fmtDate(s.estimatedDelivery)}</div></div>
+    </div>
+    ${s.delayReason ? `<div style="background:var(--red-bg);border:1px solid rgba(239,68,68,.3);border-radius:6px;padding:8px 12px;font-size:.72rem;color:var(--red);margin-bottom:12px"><strong>Delay:</strong> ${s.delayReason}</div>` : ''}`;
+
+  document.getElementById('modal-ship-contacts').innerHTML = `
+    <div style="font-size:.75rem;font-weight:600;margin-bottom:8px">Logistics Contact</div>
+    <div class="contact-item">
+      <div class="contact-role">Carrier</div>
+      <div class="contact-name">${s.contact.name}</div>
+      <div class="contact-info">
+        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+        ${s.contact.phone}
+      </div>
+      <div class="contact-info" style="margin-top:2px">
+        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        ${s.contact.email}
+      </div>
+    </div>`;
+  openModal('modal-shipment');
+}
+
+function trackShipment(id) { openShipmentModal(id); }
+
+/* ════════════════════════════════════════════════════════════════
+   RECONCILIATION VIEW
+   ════════════════════════════════════════════════════════════════ */
+function renderReconView() {
+  const siteName = document.getElementById('recon-site-select')?.value || SITES[0].name;
+  const site = SITES.find(s => s.name === siteName) || SITES[0];
+  const siteKits = KITS.filter(k => k.site === siteName);
+  const avail = siteKits.filter(k => k.status === 'available').length;
+  const dispensed = siteKits.filter(k => k.status === 'dispensed').length;
+  const expiredKits = siteKits.filter(k => daysFrom(k.expiry) < 0 || k.status === 'quarantine').length;
+  const expiringKits = siteKits.filter(k => daysFrom(k.expiry) >= 0 && daysFrom(k.expiry) <= 30).length;
+
+  // Summary boxes
+  document.getElementById('recon-summary-row').innerHTML = `
+    <div class="recon-box rb-match">
+      <div class="rb-val">${avail}</div>
+      <div class="rb-lbl">Available</div>
+    </div>
+    <div class="recon-box">
+      <div class="rb-val">${dispensed}</div>
+      <div class="rb-lbl">Dispensed</div>
+    </div>
+    <div class="recon-box rb-exp">
+      <div class="rb-val">${expiringKits}</div>
+      <div class="rb-lbl">Expiring ≤30d</div>
+    </div>
+    <div class="recon-box rb-disc">
+      <div class="rb-val">${expiredKits}</div>
+      <div class="rb-lbl">Expired/Quarantine</div>
+    </div>`;
+
+  // Pending verification table
+  const pendingKits = siteKits.filter(k => {
+    const d = daysFrom(k.expiry);
+    return d <= 30 || k.status === 'quarantine' || k.status === 'available';
+  });
+  const tbody = document.getElementById('recon-pending-tbody');
+  tbody.innerHTML = pendingKits.map(k => {
+    const days = daysFrom(k.expiry);
+    const expiryClass = days < 0 ? 'expiry-critical' : days <= 7 ? 'expiry-critical' : days <= 30 ? 'expiry-near' : 'expiry-ok';
+    const statusBadge = k.status === 'quarantine' ? '<span class="mini-badge mb-red">Quarantine</span>' :
+      days < 0 ? '<span class="mini-badge mb-red">Expired</span>' :
+      days <= 7 ? '<span class="mini-badge mb-yellow">Expiring</span>' :
+      '<span class="mini-badge mb-green">OK</span>';
+    return `<tr>
+      <td><input type="checkbox" class="recon-kit-check" data-kit="${k.id}" /></td>
+      <td class="mono">${k.id}</td>
+      <td class="${expiryClass}">${fmtDate(k.expiry)}</td>
+      <td>${statusBadge}</td>
+      <td><button class="btn btn-ghost" style="padding:3px 8px;font-size:.65rem" onclick='openReconcileKit("${k.id}")'>Verify</button></td>
+    </tr>`;
+  }).join('');
+
+  // Safety stock indicators
+  const pct = Math.min(100, Math.round(avail / (site.safety * 2) * 100));
+  const fillClass = avail < site.safety ? 'fill-red' : avail < site.safety*1.5 ? 'fill-yellow' : 'fill-green';
+  const orderByDays = site.available < site.safety ? 'Now' : Math.round((site.available - site.safety) / 2) + ' days';
+  document.getElementById('safety-stock-body').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="safety-indicator">
+        <span class="si-label">AUR-301-A</span>
+        <div class="si-bar">
+          <div class="si-fill ${fillClass}" style="width:${pct}%"></div>
+          <div class="si-threshold" style="left:50%"></div>
+        </div>
+        <span class="si-val" style="color:var(--${avail < site.safety ? 'red' : 'green'})">${avail}</span>
+        <span class="si-thresh-label">Min: ${site.safety}</span>
+      </div>
+      <div class="safety-indicator">
+        <span class="si-label">AUR-301-P</span>
+        <div class="si-bar">
+          <div class="si-fill fill-green" style="width:68%"></div>
+          <div class="si-threshold" style="left:40%"></div>
+        </div>
+        <span class="si-val text-green">${Math.round(avail * 0.6)}</span>
+        <span class="si-thresh-label">Min: ${Math.round(site.safety * 0.7)}</span>
+      </div>
+    </div>
+    <div class="separator"></div>
+    <div style="background:var(${avail < site.safety ? '--red-bg' : '--yellow-bg'});border:1px solid rgba(${avail < site.safety ? '239,68,68' : '245,158,11'},.3);border-radius:6px;padding:10px 12px;font-size:.75rem">
+      <div style="font-weight:700;margin-bottom:4px;color:var(--${avail < site.safety ? 'red' : 'yellow'})">
+        ${avail < site.safety ? '🚨 REORDER NOW' : '⚠ Order by: ' + orderByDays}
+      </div>
+      <div style="color:var(--text2)">Safety stock level: <strong style="color:var(--text)">${site.safety} kits</strong>. Lead time: ~5 days.</div>
+      ${avail < site.safety ? `<button class="btn btn-danger" style="margin-top:8px;width:100%" onclick="openModal('modal-resupply')">Request Resupply Now</button>` : ''}
+    </div>
+    <div class="separator"></div>
+    <div style="font-size:.75rem;font-weight:600;margin-bottom:8px">Site Pharmacist</div>
+    <div class="contact-item">
+      <div class="contact-name">${SITES.find(s=>s.name===siteName)?.pharmacist?.name || '—'}</div>
+      <div class="contact-info">
+        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+        ${SITES.find(s=>s.name===siteName)?.pharmacist?.phone || '—'}
+      </div>
+    </div>`;
+
+  // History
+  document.getElementById('recon-history').innerHTML = RECON_HISTORY.map(h => `
+    <div class="tl-item">
+      <div class="tl-dot ${h.dot}">●</div>
+      <div class="tl-content">
+        <div class="tl-title">${h.title}</div>
+        <div class="tl-desc">${h.desc}</div>
+        <div class="tl-time">${h.time}</div>
+      </div>
+    </div>`).join('');
+}
+
+function reconSelectAll() {
+  document.querySelectorAll('.recon-kit-check').forEach(c => c.checked = true);
+  document.getElementById('recon-check-all').checked = true;
+}
+function toggleAllRecon(cb) {
+  document.querySelectorAll('.recon-kit-check').forEach(c => c.checked = cb.checked);
+}
+function bulkVerify() {
+  const checked = document.querySelectorAll('.recon-kit-check:checked').length;
+  if (!checked) { showToast('No kits selected','warn'); return; }
+  showToast(`${checked} kits marked as verified`, 'success');
+}
+function bulkFlag() {
+  const checked = document.querySelectorAll('.recon-kit-check:checked').length;
+  if (!checked) { showToast('No kits selected','warn'); return; }
+  showToast(`${checked} kits flagged for discrepancy review`, 'warn');
+}
+
+/* ════════════════════════════════════════════════════════════════
+   FLOW DIAGRAM
+   ════════════════════════════════════════════════════════════════ */
+function renderFlowDiagram() {
+  const nodes = [
+    {icon:'🏭', label:'Warehouse', count:274, sub:'Frankfurt Depot', cls:''},
+    {arrow:true, label:'Dispatched', count:'34'},
+    {icon:'✈️', label:'In Transit', count:34, sub:'Active shipments', cls:'fn-active'},
+    {arrow:true, label:'Received', count:'20 this wk'},
+    {icon:'🏥', label:'At Sites', count:207, sub:'6 research sites', cls:''},
+    {arrow:true, label:'Dispensed', count:'8 this wk'},
+    {icon:'👤', label:'Dispensed', count:38, sub:'To patients', cls:''},
+    {arrow:true, label:'Removed', count:'2 this wk'},
+    {icon:'🗑️', label:'Destroyed', count:12, sub:'Expired / damaged', cls:'fn-warn'},
+  ];
+  const container = document.getElementById('flow-diagram');
+  container.innerHTML = nodes.map(n => n.arrow ?
+    `<div class="flow-arrow">
+      <div class="arrow-line"></div>
+      <div class="arrow-label">${n.label}</div>
+      <div class="arrow-count">${n.count}</div>
+    </div>` :
+    `<div class="flow-node ${n.cls}">
+      <div class="fn-icon">${n.icon}</div>
+      <div class="fn-label">${n.label}</div>
+      <div class="fn-count">${n.count}</div>
+      <div class="fn-sub">${n.sub}</div>
+    </div>`
+  ).join('');
+}
+
+function renderFlowContacts() {
+  const site = SITES[1]; // Berlin as example
+  const contactsEl = document.getElementById('flow-contacts');
+  if (!contactsEl) return;
+  contactsEl.innerHTML = `
+    <div class="contacts-grid">
+      ${[
+        {role:'Site Coordinator', ...site.coordinator},
+        {role:'Pharmacist', ...site.pharmacist},
+        {role:'Receiver', ...site.receiver, email:null},
+        {role:'Logistics', name:site.logistics.name, phone:site.logistics.phone, email:null},
+      ].map(c => `
+        <div class="contact-item">
+          <div class="contact-role">${c.role}</div>
+          <div class="contact-name">${c.name}</div>
+          ${c.phone ? `<div class="contact-info">
+            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+            ${c.phone}
+          </div>` : ''}
+          ${c.email ? `<div class="contact-info" style="margin-top:2px;color:var(--accent)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            ${c.email}
+          </div>` : ''}
+        </div>`).join('')}
+    </div>`;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ALERTS
+   ════════════════════════════════════════════════════════════════ */
+function switchAlertTab(el, tab) {
+  alertTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderAlerts();
+}
+
+function renderAlerts() {
+  const typeMap = { critical:'red', warning:'yellow', info:'blue', resolved:'grey' };
+  const icons = {
+    red: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>`,
+    yellow: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>`,
+    blue: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`,
+    purple: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>`,
+  };
+  const filtered = alertTab === 'resolved'
+    ? [{id:'RES-01',type:'resolved',icon:'grey',title:'SHP-7805 delivered successfully',detail:'20 kits confirmed at St. Mary\'s. No issues.',time:'3 days ago',actions:[]}]
+    : ALERTS.filter(a => a.type === alertTab);
+
+  const container = document.getElementById('alert-list-container');
+  if (!filtered.length) {
+    container.innerHTML = `<div class="card"><div class="empty-state"><p>No alerts in this category.</p></div></div>`;
+    return;
+  }
+  container.innerHTML = `<div class="card"><div class="card-body">` +
+    filtered.map(a => `
+    <div class="alert-item">
+      <div class="alert-icon ${a.icon || typeMap[a.type]}">
+        ${icons[a.icon] || icons.red}
+      </div>
+      <div class="alert-text">
+        <strong>${a.title}</strong>
+        <span>${a.detail}</span>
+        ${a.site ? `<div style="margin-top:3px"><span class="mini-badge mb-grey">${a.study}</span> <span class="mini-badge mb-grey">${a.site}</span></div>` : ''}
+        <div class="alert-time">${a.time}</div>
+      </div>
+      <div class="action-btns">
+        ${(a.actions||[]).map(act => `
+          <button class="btn btn-ghost" style="font-size:.7rem" onclick="${act.fn}">${act.label}</button>
+        `).join('')}
+        ${alertTab !== 'resolved' ? `<button class="btn btn-success" style="font-size:.7rem" onclick="resolveAlert('${a.id}',this)">Resolve</button>` : ''}
+      </div>
+    </div>`).join('') +
+  `</div></div>`;
+}
+
+function resolveAlert(id, btn) {
+  const row = btn.closest('.alert-item');
+  row.style.opacity = '0.4';
+  row.style.transition = 'opacity .3s';
+  showToast('Alert resolved and logged', 'success');
+  setTimeout(() => row.remove(), 400);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MODAL HELPERS
+   ════════════════════════════════════════════════════════════════ */
+function openModal(id) { document.getElementById(id)?.classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id)?.classList.add('hidden'); }
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.add('hidden');
+  });
+});
+
+function submitResupply() {
+  closeModal('modal-resupply');
+  showToast('Resupply request submitted — tracking ID SHP-' + Math.floor(7900+Math.random()*100), 'success');
+}
+function saveReconcile() {
+  const action = document.getElementById('recon-action').value;
+  if (!action) { showToast('Please select a verification outcome', 'warn'); return; }
+  closeModal('modal-reconcile');
+  showToast('Reconciliation saved & logged to eTMF', 'success');
+}
+function flagKit() {
+  closeModal('modal-reconcile');
+  showToast('Discrepancy flagged — CRM notified', 'warn');
+}
+
+/* ════════════════════════════════════════════════════════════════
+   SEARCH
+   ════════════════════════════════════════════════════════════════ */
+function handleSearch(val) {
+  if (val.startsWith('KIT-')) {
+    switchView('inventory');
+    kitFilter = 'all';
+    document.querySelectorAll('#view-inventory .filter-chip').forEach(c => c.classList.remove('active'));
+    document.querySelector('#view-inventory .filter-chip').classList.add('active');
+    renderKitTable();
+    setTimeout(() => {
+      const rows = document.querySelectorAll('#kit-tbody tr');
+      rows.forEach(r => {
+        r.style.display = r.innerText.toLowerCase().includes(val.toLowerCase()) ? '' : 'none';
+      });
+    }, 50);
+  } else if (val.startsWith('SHP-')) {
+    switchView('shipments');
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   EXPORT
+   ════════════════════════════════════════════════════════════════ */
+function exportCSV() {
+  showToast('Kit register exported as CSV', 'success');
+}
+
+/* ════════════════════════════════════════════════════════════════
+   TOAST
+   ════════════════════════════════════════════════════════════════ */
+function showToast(msg, type = 'info') {
+  const icons = {
+    success: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`,
+    error:   `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
+    warn:    `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 002-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>`,
+    info:    `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`,
+  };
+  const t = document.createElement('div');
+  t.className = `toast t-${type}`;
+  t.innerHTML = `${icons[type]||icons.info}<span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+</script>
+</body>
+</html>

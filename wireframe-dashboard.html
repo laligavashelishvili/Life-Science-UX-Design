@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CRA Dashboard — Wireframe</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    background: #fff;
+    color: #222;
+    line-height: 1.4;
+  }
+
+  /* ── Utilities ── */
+  .label {
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #888;
+    margin-bottom: 6px;
+  }
+  .section-title {
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #444;
+    padding: 6px 10px;
+    background: #eee;
+    border-bottom: 1px solid #ccc;
+  }
+  .placeholder-box {
+    background: #ddd;
+    border: 1px dashed #aaa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #777;
+    font-size: 11px;
+  }
+  .btn {
+    display: inline-block;
+    border: 1.5px solid #444;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    background: #fff;
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: #333;
+    color: #fff;
+    border-color: #333;
+  }
+  .btn-small {
+    padding: 2px 6px;
+    font-size: 10px;
+    border-width: 1px;
+  }
+  .tag {
+    display: inline-block;
+    padding: 1px 6px;
+    font-size: 10px;
+    font-weight: bold;
+    border: 1px solid #333;
+  }
+  .tag-critical  { border-color: #000; background: #222; color: #fff; }
+  .tag-warning   { border-color: #666; background: #888; color: #fff; }
+  .tag-ok        { border-color: #aaa; background: #ddd; color: #333; }
+  .tag-info      { border-color: #aaa; background: #eee; color: #444; }
+  .tag-transit   { border-color: #555; background: #666; color: #fff; }
+  .tag-pending   { border-color: #999; background: #bbb; color: #222; }
+  .tag-delayed   { border-color: #000; background: #333; color: #fff; }
+  .tag-delivered { border-color: #bbb; background: #f0f0f0; color: #555; }
+  .divider { border: none; border-top: 1px solid #ccc; margin: 8px 0; }
+  .link { text-decoration: underline; font-size: 11px; color: #333; cursor: pointer; }
+  .note { font-size: 10px; color: #888; font-style: italic; }
+
+  /* ── Top Navigation Bar ── */
+  .navbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 8px 16px;
+    border: 2px solid #222;
+    border-bottom: 3px solid #222;
+    background: #f9f9f9;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .navbar-logo {
+    font-size: 15px;
+    font-weight: bold;
+    border: 2px solid #222;
+    padding: 4px 10px;
+    white-space: nowrap;
+  }
+  .navbar-study-filter {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .select-box {
+    border: 1.5px solid #555;
+    padding: 3px 20px 3px 8px;
+    font-size: 12px;
+    background: #fff;
+    appearance: none;
+    -webkit-appearance: none;
+    position: relative;
+  }
+  .select-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+  .select-wrapper::after {
+    content: "▼";
+    font-size: 9px;
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+  .navbar-spacer { flex: 1; }
+  .navbar-actions { display: flex; align-items: center; gap: 10px; }
+  .notif-bell {
+    position: relative;
+    cursor: pointer;
+    font-size: 16px;
+    border: 1.5px solid #555;
+    padding: 3px 7px;
+  }
+  .notif-count {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #222;
+    color: #fff;
+    font-size: 9px;
+    font-weight: bold;
+    border-radius: 50%;
+    width: 15px;
+    height: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .user-avatar {
+    width: 28px;
+    height: 28px;
+    border: 2px solid #333;
+    background: #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .navbar-date { font-size: 11px; color: #666; }
+  .emergency-btn {
+    border: 2px solid #000;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: bold;
+    background: #000;
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  /* ── Page layout ── */
+  .page-wrapper {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* ── Section card ── */
+  .card {
+    border: 1.5px solid #aaa;
+    background: #fafafa;
+  }
+  .card-body { padding: 10px; }
+  .card-footer {
+    padding: 6px 10px;
+    border-top: 1px solid #ddd;
+    background: #f0f0f0;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  /* ── KPI Strip ── */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+  }
+  .kpi-card {
+    border: 1.5px solid #bbb;
+    padding: 8px 10px;
+    background: #fff;
+  }
+  .kpi-number {
+    font-size: 22px;
+    font-weight: bold;
+    line-height: 1.1;
+  }
+  .kpi-label { font-size: 10px; color: #666; margin-top: 2px; }
+  .kpi-delta { font-size: 10px; color: #555; margin-top: 3px; }
+
+  /* ── Alert Banner ── */
+  .alert-zone { border: 2px solid #222; }
+  .alert-zone-header {
+    background: #222;
+    color: #fff;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .alert-count-badge {
+    background: #fff;
+    color: #222;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 1px 5px;
+    border-radius: 10px;
+  }
+  .alert-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-bottom: 1px solid #ddd;
+    background: #fff;
+  }
+  .alert-row:last-child { border-bottom: none; }
+  .alert-icon { font-size: 14px; flex-shrink: 0; }
+  .alert-severity { width: 8px; height: 8px; flex-shrink: 0; }
+  .sev-critical { background: #222; }
+  .sev-warning  { background: #777; }
+  .sev-info     { background: #aaa; }
+  .alert-text { flex: 1; }
+  .alert-title { font-weight: bold; font-size: 12px; }
+  .alert-desc  { font-size: 11px; color: #555; }
+  .alert-meta  { font-size: 10px; color: #888; }
+  .alert-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .alert-ack { font-size: 10px; color: #888; text-decoration: underline; cursor: pointer; }
+
+  /* ── Two-column main grid ── */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .main-grid-wide {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 12px;
+  }
+
+  /* ── Site Overview Table ── */
+  .site-table { width: 100%; border-collapse: collapse; }
+  .site-table th {
+    text-align: left;
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #777;
+    padding: 4px 6px;
+    border-bottom: 1.5px solid #bbb;
+    background: #f0f0f0;
+  }
+  .site-table td {
+    padding: 6px 6px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+  }
+  .site-table tr:hover td { background: #f5f5f5; }
+  .site-name { font-weight: bold; font-size: 12px; }
+  .site-country { font-size: 10px; color: #888; }
+  .progress-bar-wrap {
+    width: 80px;
+    height: 8px;
+    background: #ddd;
+    border: 1px solid #bbb;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  .progress-bar-fill { height: 100%; background: #444; }
+  .pb-critical { background: #222; }
+  .pb-warning  { background: #888; }
+  .pb-ok       { background: #bbb; }
+
+  /* ── Shipment list ── */
+  .shipment-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid #eee;
+  }
+  .shipment-row:last-child { border-bottom: none; }
+  .shipment-id { font-family: monospace; font-size: 11px; font-weight: bold; min-width: 80px; }
+  .shipment-info { flex: 1; }
+  .shipment-route { font-size: 11px; font-weight: bold; }
+  .shipment-meta { font-size: 10px; color: #666; }
+  .shipment-eta { font-size: 10px; font-weight: bold; text-align: right; min-width: 70px; }
+  .eta-overdue { color: #222; font-weight: bold; }
+
+  /* ── Near Expiry Kits ── */
+  .kit-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 11px;
+  }
+  .kit-row:last-child { border-bottom: none; }
+  .kit-id { font-family: monospace; font-weight: bold; min-width: 120px; }
+  .kit-site { flex: 1; color: #444; }
+  .kit-days { text-align: right; font-weight: bold; min-width: 70px; }
+  .days-critical { color: #000; font-weight: bold; }
+  .days-warning  { color: #555; }
+
+  /* ── Reconciliation Due ── */
+  .recon-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 11px;
+  }
+  .recon-row:last-child { border-bottom: none; }
+  .recon-site { flex: 1; font-weight: bold; }
+  .recon-date { color: #444; min-width: 90px; }
+  .recon-status { min-width: 80px; text-align: right; }
+
+  /* ── Safety Stock Overview ── */
+  .stock-site-block {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+  }
+  .stock-site-block:last-child { border-bottom: none; }
+  .stock-site-name { font-weight: bold; font-size: 12px; margin-bottom: 4px; }
+  .stock-gauge-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+    color: #555;
+  }
+  .gauge-track {
+    flex: 1;
+    height: 12px;
+    background: #e8e8e8;
+    border: 1px solid #bbb;
+    position: relative;
+  }
+  .gauge-fill { height: 100%; background: #555; }
+  .gauge-safety-marker {
+    position: absolute;
+    top: -3px;
+    bottom: -3px;
+    width: 2px;
+    background: #000;
+  }
+  .gauge-reorder-marker {
+    position: absolute;
+    top: -3px;
+    bottom: -3px;
+    width: 2px;
+    background: #888;
+    border-left: 1px dashed #555;
+  }
+
+  /* ── Recent Activity Feed ── */
+  .activity-item {
+    display: flex;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 11px;
+  }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-dot {
+    width: 8px;
+    height: 8px;
+    border: 1.5px solid #555;
+    border-radius: 50%;
+    margin-top: 3px;
+    flex-shrink: 0;
+  }
+  .activity-time { color: #888; font-size: 10px; min-width: 70px; }
+  .activity-text { flex: 1; }
+
+  /* ── Drug lifecycle summary ── */
+  .lifecycle-row {
+    display: flex;
+    gap: 0;
+    height: 20px;
+    border: 1px solid #aaa;
+    overflow: hidden;
+    margin: 6px 0;
+  }
+  .lifecycle-seg {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: bold;
+    color: #fff;
+    overflow: hidden;
+  }
+  .seg-available { background: #555; }
+  .seg-dispensed { background: #888; }
+  .seg-transit   { background: #777; }
+  .seg-expired   { background: #222; }
+  .seg-quarantine{ background: #aaa; color: #333; }
+
+  /* ── Study selector tabs ── */
+  .study-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid #333;
+    margin-bottom: 10px;
+  }
+  .study-tab {
+    padding: 5px 14px;
+    font-size: 11px;
+    font-weight: bold;
+    border: 1.5px solid #bbb;
+    border-bottom: none;
+    cursor: pointer;
+    background: #f0f0f0;
+    color: #666;
+  }
+  .study-tab.active {
+    background: #fff;
+    border-color: #333;
+    color: #222;
+    border-bottom: 2px solid #fff;
+    margin-bottom: -2px;
+  }
+  .study-tab-all { background: #222; color: #fff; border-color: #222; }
+
+  /* ── Section header row ── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: #eee;
+    border-bottom: 1px solid #ccc;
+  }
+  .section-header-title {
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #444;
+  }
+  .section-header-actions { display: flex; gap: 6px; align-items: center; }
+
+  /* ── Mini stat chips ── */
+  .chip-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+  .chip {
+    border: 1px solid #bbb;
+    padding: 2px 7px;
+    font-size: 10px;
+    background: #fff;
+  }
+  .chip-dark { background: #333; color: #fff; border-color: #333; }
+
+  /* ── Legend ── */
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #555; }
+  .legend-dot { width: 10px; height: 10px; border: 1px solid #555; }
+  .ld-critical { background: #222; }
+  .ld-warning  { background: #888; }
+  .ld-ok       { background: #ddd; }
+
+  /* ── Columns ── */
+  .col-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .col-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+  /* ── Wire annotation ── */
+  .annotation {
+    font-size: 10px;
+    color: #888;
+    font-style: italic;
+    padding: 4px 10px;
+    background: #fffde7;
+    border: 1px dashed #ccc;
+    margin-bottom: 6px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     NAVBAR
+════════════════════════════════════════════════ -->
+<nav class="navbar">
+  <div class="navbar-logo">ClinTrack</div>
+
+  <span class="label" style="margin:0">Study:</span>
+  <div class="select-wrapper">
+    <select class="select-box">
+      <option>All Studies</option>
+      <option>STUDY-ACE-301</option>
+      <option>STUDY-NEPH-112</option>
+    </select>
+  </div>
+
+  <span class="label" style="margin:0">Site:</span>
+  <div class="select-wrapper">
+    <select class="select-box">
+      <option>All Sites</option>
+      <option>Charité Berlin</option>
+      <option>Pitié-Salpêtrière</option>
+      <option>Haukeland Bergen</option>
+      <option>SPSK Poznań</option>
+    </select>
+  </div>
+
+  <div class="navbar-spacer"></div>
+
+  <div class="navbar-actions">
+    <span class="navbar-date">10 Apr 2026 — 09:41</span>
+    <button class="emergency-btn">⚡ Emergency Resupply</button>
+    <div class="notif-bell">
+      🔔
+      <div class="notif-count">5</div>
+    </div>
+    <div class="user-avatar">SA</div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE WRAPPER
+════════════════════════════════════════════════ -->
+<div class="page-wrapper">
+
+  <!-- Study context banner -->
+  <div style="background:#f0f0f0; border:1px solid #ccc; padding:6px 10px; display:flex; align-items:center; gap:12px; font-size:11px;">
+    <strong>Viewing: All Studies</strong>
+    <span style="color:#888;">|</span>
+    <span>CRA: Sophie Andersson</span>
+    <span style="color:#888;">|</span>
+    <span>4 assigned sites &nbsp;·&nbsp; 2 active studies</span>
+    <span style="color:#888;">|</span>
+    <span>Data last synced: 09:38</span>
+    <span style="flex:1"></span>
+    <span class="link">Refresh</span>
+  </div>
+
+  <!-- ─────────────────────────────────────────────
+       STUDY TABS
+  ───────────────────────────────────────────── -->
+  <div>
+    <div class="label">Filter by Study</div>
+    <div class="study-tabs">
+      <div class="study-tab active study-tab-all">All Studies</div>
+      <div class="study-tab">STUDY-ACE-301 &nbsp;·&nbsp; Cardiology &nbsp;·&nbsp; Phase III</div>
+      <div class="study-tab">STUDY-NEPH-112 &nbsp;·&nbsp; Nephrology &nbsp;·&nbsp; Phase II</div>
+    </div>
+    <div class="annotation">Switching study tab filters: Site Overview, Shipments, Kit Expiry, and Reconciliation sections below</div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────
+       KPI STRIP
+  ───────────────────────────────────────────── -->
+  <div>
+    <div class="label">At a Glance</div>
+    <div class="kpi-strip">
+      <div class="kpi-card">
+        <div class="kpi-number">4</div>
+        <div class="kpi-label">Active Sites</div>
+        <div class="kpi-delta">2 need attention</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-number">2</div>
+        <div class="kpi-label">Active Studies</div>
+        <div class="kpi-delta">Both Phase II–III</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-number" style="color:#222;">5</div>
+        <div class="kpi-label">Open Alerts</div>
+        <div class="kpi-delta">2 critical · 3 warning</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-number">6</div>
+        <div class="kpi-label">Active Shipments</div>
+        <div class="kpi-delta">2 in transit · 2 pending · 1 delayed</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-number">4</div>
+        <div class="kpi-label">Near-Expiry Kits</div>
+        <div class="kpi-delta">&lt; 30 days to SLED</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-number" style="color:#222;">2</div>
+        <div class="kpi-label">Overdue Reconciliations</div>
+        <div class="kpi-delta">Poznań overdue 3 days</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────
+       ALERT ZONE
+  ───────────────────────────────────────────── -->
+  <div class="alert-zone">
+    <div class="alert-zone-header">
+      ⚠ ALERTS REQUIRING ACTION
+      <span class="alert-count-badge">5 alerts</span>
+      <span style="flex:1"></span>
+      <span style="font-size:10px; font-weight:normal; cursor:pointer; text-decoration:underline;">Acknowledge All</span>
+    </div>
+
+    <!-- Critical 1 -->
+    <div class="alert-row">
+      <div class="alert-severity sev-critical"></div>
+      <span class="tag tag-critical">CRITICAL</span>
+      <div class="alert-text">
+        <div class="alert-title">Stock below Safety Stock — Haukeland Bergen · STUDY-ACE-301</div>
+        <div class="alert-desc">Available kits: 9 &nbsp;|&nbsp; Safety Stock threshold: 8 &nbsp;|&nbsp; Reorder point (12) breached. Immediate resupply required.</div>
+        <div class="alert-meta">Triggered: 09 Apr 2026 08:00 &nbsp;·&nbsp; Not acknowledged</div>
+      </div>
+      <div class="alert-actions">
+        <button class="btn btn-primary btn-small">Request Resupply</button>
+        <button class="btn btn-small">View Site</button>
+        <span class="alert-ack">Ack</span>
+      </div>
+    </div>
+
+    <!-- Critical 2 -->
+    <div class="alert-row">
+      <div class="alert-severity sev-critical"></div>
+      <span class="tag tag-critical">CRITICAL</span>
+      <div class="alert-text">
+        <div class="alert-title">2 expired kits require reconciliation — Charité Berlin · STUDY-ACE-301</div>
+        <div class="alert-desc">Kits ACE-BER-00019 and ACE-BER-00020 have passed SLED. Physical verification and destruction authorisation required before next site visit.</div>
+        <div class="alert-meta">Triggered: 08 Apr 2026 07:30 &nbsp;·&nbsp; Not acknowledged</div>
+      </div>
+      <div class="alert-actions">
+        <button class="btn btn-primary btn-small">Start Reconciliation</button>
+        <button class="btn btn-small">View Kits</button>
+        <span class="alert-ack">Ack</span>
+      </div>
+    </div>
+
+    <!-- Warning 1 -->
+    <div class="alert-row">
+      <div class="alert-severity sev-warning"></div>
+      <span class="tag tag-warning">WARNING</span>
+      <div class="alert-text">
+        <div class="alert-title">Temperature excursion — Shipment SHP-00036 delayed · Pitié-Salpêtrière</div>
+        <div class="alert-desc">DHL shipment recorded +12°C excursion (4h) at Brussels hub. Shipment on hold pending QA review. Kit ACE-PAR-00035 placed in quarantine.</div>
+        <div class="alert-meta">Triggered: 02 Apr 2026 11:30 &nbsp;·&nbsp; Not acknowledged</div>
+      </div>
+      <div class="alert-actions">
+        <button class="btn btn-small">View Shipment</button>
+        <button class="btn btn-small">Contact DHL</button>
+        <span class="alert-ack">Ack</span>
+      </div>
+    </div>
+
+    <!-- Warning 2 -->
+    <div class="alert-row">
+      <div class="alert-severity sev-warning"></div>
+      <span class="tag tag-warning">WARNING</span>
+      <div class="alert-text">
+        <div class="alert-title">Reconciliation overdue 3 days — SPSK Poznań · STUDY-NEPH-112</div>
+        <div class="alert-desc">Last reconciliation: 10 Mar 2026. Due date was 07 Apr 2026. Schedule visit or remote session with pharmacist Marek Kowalski.</div>
+        <div class="alert-meta">Triggered: 08 Apr 2026 06:00 &nbsp;·&nbsp; Not acknowledged</div>
+      </div>
+      <div class="alert-actions">
+        <button class="btn btn-small">Schedule Reconciliation</button>
+        <button class="btn btn-small">Contact Pharmacist</button>
+        <span class="alert-ack">Ack</span>
+      </div>
+    </div>
+
+    <!-- Info -->
+    <div class="alert-row">
+      <div class="alert-severity sev-info"></div>
+      <span class="tag tag-info">INFO</span>
+      <div class="alert-text">
+        <div class="alert-title">2 kits near expiry — Charité Berlin · STUDY-ACE-301</div>
+        <div class="alert-desc">ACE-BER-00024 expires 08 May 2026 (28 days) · ACE-BER-00025 expires 12 May 2026 (32 days). Prioritise for next dispensing.</div>
+        <div class="alert-meta">Triggered: 09 Apr 2026 08:00 &nbsp;·&nbsp; Acknowledged</div>
+      </div>
+      <div class="alert-actions">
+        <button class="btn btn-small">View Kits</button>
+        <span class="alert-ack">Dismiss</span>
+      </div>
+    </div>
+
+    <div style="padding:5px 10px; background:#f8f8f8; border-top:1px solid #ddd; text-align:right;">
+      <span class="link">View all alerts (5) →</span>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────
+       MAIN GRID: Site Overview + Shipments
+  ───────────────────────────────────────────── -->
+  <div class="main-grid-wide">
+
+    <!-- SITE OVERVIEW -->
+    <div class="card">
+      <div class="section-header">
+        <div class="section-header-title">Site Inventory Overview</div>
+        <div class="section-header-actions">
+          <div class="legend">
+            <div class="legend-item"><div class="legend-dot ld-critical"></div>Critical</div>
+            <div class="legend-item"><div class="legend-dot ld-warning"></div>Low</div>
+            <div class="legend-item"><div class="legend-dot ld-ok"></div>OK</div>
+          </div>
+          <span class="link">Export CSV</span>
+        </div>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <table class="site-table">
+          <thead>
+            <tr>
+              <th>Site</th>
+              <th>Study</th>
+              <th>Status</th>
+              <th>Available</th>
+              <th>Stock Level</th>
+              <th>Safety Stock</th>
+              <th>Next SLED</th>
+              <th>Recon Due</th>
+              <th>In Transit</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Critical -->
+            <tr style="background:#f5f5f5;">
+              <td>
+                <div class="site-name">Haukeland Bergen</div>
+                <div class="site-country">🇳🇴 Bergen, NO</div>
+              </td>
+              <td><span class="tag">ACE-301</span></td>
+              <td><span class="tag tag-critical">CRITICAL</span></td>
+              <td><strong>9</strong> kits</td>
+              <td>
+                <div class="progress-bar-wrap">
+                  <div class="progress-bar-fill pb-critical" style="width:30%"></div>
+                </div>
+                <span style="font-size:10px;"> 9/30</span>
+              </td>
+              <td style="font-size:11px;">Min: 8 &nbsp;|&nbsp; Reorder: 12</td>
+              <td style="font-size:11px; font-weight:bold;">20 May 2026<br><span style="font-weight:normal;color:#888;">40 days</span></td>
+              <td style="font-size:11px;">12 Apr 2026<br><span style="color:#c00; font-weight:bold;">in 2 days</span></td>
+              <td>
+                <span class="tag tag-transit">6 kits</span><br>
+                <span style="font-size:10px;">SHP-00039</span>
+              </td>
+              <td>
+                <button class="btn btn-primary btn-small">Resupply</button>
+                <button class="btn btn-small">View →</button>
+              </td>
+            </tr>
+            <!-- Warning -->
+            <tr>
+              <td>
+                <div class="site-name">Charité Berlin</div>
+                <div class="site-country">🇩🇪 Berlin, DE</div>
+              </td>
+              <td><span class="tag">ACE-301</span></td>
+              <td><span class="tag tag-warning">LOW</span></td>
+              <td><strong>18</strong> kits</td>
+              <td>
+                <div class="progress-bar-wrap">
+                  <div class="progress-bar-fill pb-warning" style="width:55%"></div>
+                </div>
+                <span style="font-size:10px;"> 18/33</span>
+              </td>
+              <td style="font-size:11px;">Min: 10 &nbsp;|&nbsp; Reorder: 15</td>
+              <td style="font-size:11px; color:#c00; font-weight:bold;">08 May 2026<br><span style="font-weight:normal;color:#888;">28 days ⚠</span></td>
+              <td style="font-size:11px;">25 Apr 2026<br><span style="color:#888;">15 days</span></td>
+              <td>
+                <span class="tag tag-transit">1 kit</span><br>
+                <span style="font-size:10px;">SHP-00038</span>
+              </td>
+              <td>
+                <button class="btn btn-small">Reconcile</button>
+                <button class="btn btn-small">View →</button>
+              </td>
+            </tr>
+            <!-- Warning NEPH -->
+            <tr>
+              <td>
+                <div class="site-name">Charité Berlin</div>
+                <div class="site-country">🇩🇪 Berlin, DE</div>
+              </td>
+              <td><span class="tag">NEPH-112</span></td>
+              <td><span class="tag tag-ok">OK</span></td>
+              <td><strong>22</strong> kits</td>
+              <td>
+                <div class="progress-bar-wrap">
+                  <div class="progress-bar-fill pb-ok" style="width:75%"></div>
+                </div>
+                <span style="font-size:10px;"> 22/29</span>
+              </td>
+              <td style="font-size:11px;">Min: 15 &nbsp;|&nbsp; Reorder: 20</td>
+              <td style="font-size:11px;">Jun 2025<br><span style="color:#c00;">EXPIRED ⚠</span></td>
+              <td style="font-size:11px;">30 Apr 2026<br><span style="color:#888;">20 days</span></td>
+              <td>—</td>
+              <td>
+                <button class="btn btn-small">View →</button>
+              </td>
+            </tr>
+            <!-- OK -->
+            <tr>
+              <td>
+                <div class="site-name">Pitié-Salpêtrière</div>
+                <div class="site-country">🇫🇷 Paris, FR</div>
+              </td>
+              <td><span class="tag">ACE-301</span></td>
+              <td><span class="tag tag-ok">OK</span></td>
+              <td><strong>32</strong> kits</td>
+              <td>
+                <div class="progress-bar-wrap">
+                  <div class="progress-bar-fill pb-ok" style="width:85%"></div>
+                </div>
+                <span style="font-size:10px;"> 32/37</span>
+              </td>
+              <td style="font-size:11px;">Min: 12 &nbsp;|&nbsp; Reorder: 18</td>
+              <td style="font-size:11px;">Dec 2025<br><span style="color:#888;">future</span></td>
+              <td style="font-size:11px;">29 Apr 2026<br><span style="color:#888;">19 days</span></td>
+              <td>
+                <span class="tag tag-pending">⚠ DELAYED</span><br>
+                <span style="font-size:10px;">SHP-00036</span>
+              </td>
+              <td>
+                <button class="btn btn-small">View →</button>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="site-name">Pitié-Salpêtrière</div>
+                <div class="site-country">🇫🇷 Paris, FR</div>
+              </td>
+              <td><span class="tag">NEPH-112</span></td>
+              <td><span class="tag tag-ok">OK</span></td>
+              <td><strong>14</strong> kits</td>
+              <td>
+                <div class="progress-bar-wrap">
+                  <div class="progress-bar-fill pb-ok" style="width:70%"></div>
+                </div>
+                <span style="font-size:10px;"> 14/20</span>
+              </td>
+              <td style="font-size:11px;">Min: 10 &nbsp;|&nbsp; Reorder: 14</td>
+              <td style="font-size:11px;">Dec 2025<br><span style="color:#888;">future</span></td>
+              <td style="font-size:11px;">22 Apr 2026<br><span style="color:#888;">12 days</span></td>
+              <td>
+                <span class="tag tag-transit">1 kit</span><br>
+                <span style="font-size:10px;">SHP-00041</span>
+              </td>
+              <td>
+                <button class="btn btn-small">View →</button>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="site-name">SPSK Poznań</div>
+                <div class="site-country">🇵🇱 Poznań, PL</div>
+              </td>
+              <td><span class="tag">NEPH-112</span></td>
+              <td><span class="tag tag-warning">LOW</span></td>
+              <td><strong>6</strong> kits</td>
+              <td>
+                <div class="progress-bar-wrap">
+                  <div class="progress-bar-fill pb-warning" style="width:38%"></div>
+                </div>
+                <span style="font-size:10px;"> 6/16</span>
+              </td>
+              <td style="font-size:11px;">Min: 8 &nbsp;|&nbsp; Reorder: 10</td>
+              <td style="font-size:11px;">01 May 2026<br><span style="color:#c00;">21 days ⚠</span></td>
+              <td style="font-size:11px; color:#c00; font-weight:bold;">07 Apr 2026<br><span>OVERDUE 3d</span></td>
+              <td>
+                <span class="tag tag-pending">PENDING</span><br>
+                <span style="font-size:10px;">SHP-00040</span>
+              </td>
+              <td>
+                <button class="btn btn-primary btn-small">Resupply</button>
+                <button class="btn btn-small">View →</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer">
+        <span class="link">View all sites →</span>
+      </div>
+    </div>
+
+    <!-- SHIPMENTS IN MOTION -->
+    <div class="card">
+      <div class="section-header">
+        <div class="section-header-title">Shipments in Motion</div>
+        <div class="section-header-actions">
+          <span class="link">View All →</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="chip-row">
+          <span class="chip chip-dark">2 In Transit</span>
+          <span class="chip">2 Pending</span>
+          <span class="chip chip-dark">1 Delayed ⚠</span>
+          <span class="chip">1 Delivered</span>
+        </div>
+        <hr class="divider"/>
+
+        <div class="shipment-row" style="background:#f0f0f0; padding:5px 4px; border:1px solid #aaa; margin-bottom:4px;">
+          <div>
+            <div class="shipment-id">SHP-00036</div>
+            <div style="margin-top:2px;"><span class="tag tag-delayed">DELAYED</span> <span class="tag" style="font-size:9px;">⚠ TEMP EXCURSION</span></div>
+          </div>
+          <div class="shipment-info">
+            <div class="shipment-route">Frankfurt WH → Pitié-Salpêtrière</div>
+            <div class="shipment-meta">DHL Clinical · DHL-CL-5500092 · ACE-301 · 1 kit</div>
+            <div class="shipment-meta">⚠ On hold at Brussels hub — QA review pending</div>
+          </div>
+          <div>
+            <div class="shipment-eta eta-overdue">ETA<br>05 Apr ❌</div>
+            <div style="margin-top:4px;"><button class="btn btn-primary btn-small">Contact DHL</button></div>
+          </div>
+        </div>
+
+        <div class="shipment-row">
+          <div>
+            <div class="shipment-id">SHP-00038</div>
+            <div style="margin-top:2px;"><span class="tag tag-transit">IN TRANSIT</span></div>
+          </div>
+          <div class="shipment-info">
+            <div class="shipment-route">Frankfurt WH → Charité Berlin</div>
+            <div class="shipment-meta">World Courier · WC-EU-9920183 · ACE-301 · 1 kit</div>
+            <div class="shipment-meta">Last event: Out for delivery — Berlin hub</div>
+          </div>
+          <div>
+            <div class="shipment-eta">ETA<br>12 Apr</div>
+            <div style="margin-top:4px;"><button class="btn btn-small">Track →</button></div>
+          </div>
+        </div>
+
+        <div class="shipment-row">
+          <div>
+            <div class="shipment-id">SHP-00041</div>
+            <div style="margin-top:2px;"><span class="tag tag-transit">IN TRANSIT</span></div>
+          </div>
+          <div class="shipment-info">
+            <div class="shipment-route">Frankfurt WH → Pitié-Salpêtrière</div>
+            <div class="shipment-meta">World Courier · WC-EU-9920195 · NEPH-112 · 1 kit</div>
+            <div class="shipment-meta">Last event: Arrived Paris CDG hub</div>
+          </div>
+          <div>
+            <div class="shipment-eta">ETA<br>13 Apr</div>
+            <div style="margin-top:4px;"><button class="btn btn-small">Track →</button></div>
+          </div>
+        </div>
+
+        <div class="shipment-row">
+          <div>
+            <div class="shipment-id">SHP-00039</div>
+            <div style="margin-top:2px;"><span class="tag tag-pending">PENDING</span></div>
+          </div>
+          <div class="shipment-info">
+            <div class="shipment-route">Frankfurt WH → Haukeland Bergen</div>
+            <div class="shipment-meta">World Courier · ACE-301 · 6 kits</div>
+            <div class="shipment-meta">Dispatch: 14 Apr 2026 — awaiting preparation</div>
+          </div>
+          <div>
+            <div class="shipment-eta">ETA<br>18 Apr</div>
+            <div style="margin-top:4px;"><button class="btn btn-small">Contact WH</button></div>
+          </div>
+        </div>
+
+        <div class="shipment-row">
+          <div>
+            <div class="shipment-id">SHP-00040</div>
+            <div style="margin-top:2px;"><span class="tag tag-pending">PENDING</span></div>
+          </div>
+          <div class="shipment-info">
+            <div class="shipment-route">Frankfurt WH → SPSK Poznań</div>
+            <div class="shipment-meta">DHL Clinical · NEPH-112 · 8 kits</div>
+            <div class="shipment-meta">Dispatch: 13 Apr 2026 — order submitted</div>
+          </div>
+          <div>
+            <div class="shipment-eta">ETA<br>16 Apr</div>
+            <div style="margin-top:4px;"><button class="btn btn-small">Contact WH</button></div>
+          </div>
+        </div>
+
+        <div class="shipment-row" style="opacity:0.5;">
+          <div>
+            <div class="shipment-id">SHP-00035</div>
+            <div style="margin-top:2px;"><span class="tag tag-delivered">DELIVERED</span></div>
+          </div>
+          <div class="shipment-info">
+            <div class="shipment-route">Frankfurt WH → Pitié-Salpêtrière</div>
+            <div class="shipment-meta">World Courier · ACE-301 · 10 kits</div>
+            <div class="shipment-meta">Signed by: Marie Blanc — 18 Mar 2026</div>
+          </div>
+          <div>
+            <div class="shipment-eta">Delivered<br>18 Mar</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="link">View all shipments →</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────
+       LOWER GRID: Near Expiry + Reconciliation + Safety Stock
+  ───────────────────────────────────────────── -->
+  <div class="col-3">
+
+    <!-- Near Expiry Kits -->
+    <div class="card">
+      <div class="section-header">
+        <div class="section-header-title">Near-Expiry Kits</div>
+        <div class="section-header-actions">
+          <div class="select-wrapper" style="font-size:10px;">
+            <select class="select-box" style="font-size:10px; padding:2px 18px 2px 6px;">
+              <option>≤ 30 days</option>
+              <option>≤ 14 days</option>
+              <option>≤ 60 days</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="annotation">Sorted by SLED date — soonest first. Click row → Site Detail</div>
+        <div style="display:flex; font-size:10px; font-weight:bold; color:#888; padding-bottom:4px; border-bottom:1px solid #ddd; gap:8px;">
+          <span style="min-width:130px;">Kit ID</span>
+          <span style="flex:1;">Site · Study</span>
+          <span>SLED</span>
+          <span style="min-width:55px; text-align:right;">Days left</span>
+        </div>
+
+        <div class="kit-row">
+          <span class="kit-id">ACE-BER-00024</span>
+          <span class="kit-site">Berlin · ACE-301</span>
+          <span style="font-size:10px; min-width:80px;">08 May 2026</span>
+          <span class="kit-days days-critical">28 days ⚠</span>
+        </div>
+        <div class="kit-row">
+          <span class="kit-id">ACE-BER-00025</span>
+          <span class="kit-site">Berlin · ACE-301</span>
+          <span style="font-size:10px; min-width:80px;">12 May 2026</span>
+          <span class="kit-days days-critical">32 days ⚠</span>
+        </div>
+        <div class="kit-row">
+          <span class="kit-id">NEP-POZ-00006</span>
+          <span class="kit-site">Poznań · NEPH-112</span>
+          <span style="font-size:10px; min-width:80px;">01 May 2026</span>
+          <span class="kit-days days-critical">21 days ⚠</span>
+        </div>
+        <div class="kit-row">
+          <span class="kit-id">ACE-BRG-00009</span>
+          <span class="kit-site">Bergen · ACE-301</span>
+          <span style="font-size:10px; min-width:80px;">20 May 2026</span>
+          <span class="kit-days days-warning">40 days</span>
+        </div>
+
+        <div style="margin-top:8px; border-top:1px solid #eee; padding-top:6px;">
+          <div style="display:flex; gap:8px; font-size:10px; color:#555; align-items:center;">
+            <span>Expired (unreconciled):</span>
+            <span class="tag tag-critical">ACE-BER-00019</span>
+            <span class="tag tag-critical">ACE-BER-00020</span>
+            <button class="btn btn-primary btn-small">Reconcile Now</button>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="link">View all expiry kits →</span>
+      </div>
+    </div>
+
+    <!-- Reconciliation Schedule -->
+    <div class="card">
+      <div class="section-header">
+        <div class="section-header-title">Reconciliation Schedule</div>
+      </div>
+      <div class="card-body">
+        <div class="annotation">Overdue items shown first. Click row → Start reconciliation</div>
+
+        <div class="recon-row" style="background:#f0f0f0; padding:4px 2px;">
+          <span class="recon-site">SPSK Poznań · NEPH-112</span>
+          <span class="recon-date">Due: 07 Apr 2026</span>
+          <span class="recon-status"><span class="tag tag-critical">OVERDUE 3d</span></span>
+        </div>
+        <div style="font-size:10px; color:#888; padding:2px 0 6px 0;">Contact: Pharmacist Marek Kowalski</div>
+
+        <div class="recon-row">
+          <span class="recon-site">Haukeland Bergen · ACE-301</span>
+          <span class="recon-date">Due: 12 Apr 2026</span>
+          <span class="recon-status"><span class="tag tag-warning">2 days</span></span>
+        </div>
+        <div style="font-size:10px; color:#888; padding:2px 0 6px 0;">Contact: Pharmacist Ingrid Sørensen</div>
+
+        <div class="recon-row">
+          <span class="recon-site">Pitié-Salpêtrière · NEPH-112</span>
+          <span class="recon-date">Due: 22 Apr 2026</span>
+          <span class="recon-status"><span class="tag tag-ok">12 days</span></span>
+        </div>
+        <div class="recon-row">
+          <span class="recon-site">Charité Berlin · ACE-301</span>
+          <span class="recon-date">Due: 25 Apr 2026</span>
+          <span class="recon-status"><span class="tag tag-ok">15 days</span></span>
+        </div>
+        <div class="recon-row">
+          <span class="recon-site">Pitié-Salpêtrière · ACE-301</span>
+          <span class="recon-date">Due: 29 Apr 2026</span>
+          <span class="recon-status"><span class="tag tag-ok">19 days</span></span>
+        </div>
+        <div class="recon-row">
+          <span class="recon-site">Charité Berlin · NEPH-112</span>
+          <span class="recon-date">Due: 30 Apr 2026</span>
+          <span class="recon-status"><span class="tag tag-ok">20 days</span></span>
+        </div>
+
+        <hr class="divider"/>
+        <div style="font-size:10px; color:#666;">
+          Last completed: Berlin ACE-301 — 28 Mar 2026 · Signed by Sophie Andersson
+        </div>
+      </div>
+    </div>
+
+    <!-- Safety Stock Gauges -->
+    <div class="card">
+      <div class="section-header">
+        <div class="section-header-title">Safety Stock Levels</div>
+      </div>
+      <div class="card-body">
+        <div class="annotation">
+          ▓▓ = Available &nbsp;|&nbsp; | = Reorder point &nbsp;|&nbsp; ‖ = Safety stock minimum
+        </div>
+
+        <div class="stock-site-block">
+          <div class="stock-site-name">Bergen · ACE-301 <span class="tag tag-critical" style="font-size:9px;">CRITICAL</span></div>
+          <div class="stock-gauge-row">
+            <span style="min-width:40px;">9 kits</span>
+            <div class="gauge-track">
+              <div class="gauge-fill" style="width:30%; background:#222;"></div>
+              <div class="gauge-safety-marker" style="left:26%;"></div>
+              <div class="gauge-reorder-marker" style="left:40%;"></div>
+            </div>
+            <span>Safety: 8 &nbsp; Reorder: 12</span>
+          </div>
+        </div>
+
+        <div class="stock-site-block">
+          <div class="stock-site-name">Poznań · NEPH-112 <span class="tag tag-warning" style="font-size:9px;">LOW</span></div>
+          <div class="stock-gauge-row">
+            <span style="min-width:40px;">6 kits</span>
+            <div class="gauge-track">
+              <div class="gauge-fill" style="width:38%; background:#888;"></div>
+              <div class="gauge-safety-marker" style="left:50%;"></div>
+              <div class="gauge-reorder-marker" style="left:63%;"></div>
+            </div>
+            <span>Safety: 8 &nbsp; Reorder: 10</span>
+          </div>
+        </div>
+
+        <div class="stock-site-block">
+          <div class="stock-site-name">Berlin · ACE-301 <span class="tag tag-warning" style="font-size:9px;">LOW</span></div>
+          <div class="stock-gauge-row">
+            <span style="min-width:40px;">18 kits</span>
+            <div class="gauge-track">
+              <div class="gauge-fill" style="width:55%; background:#888;"></div>
+              <div class="gauge-safety-marker" style="left:30%;"></div>
+              <div class="gauge-reorder-marker" style="left:45%;"></div>
+            </div>
+            <span>Safety: 10 &nbsp; Reorder: 15</span>
+          </div>
+        </div>
+
+        <div class="stock-site-block">
+          <div class="stock-site-name">Berlin · NEPH-112 <span class="tag tag-ok" style="font-size:9px;">OK</span></div>
+          <div class="stock-gauge-row">
+            <span style="min-width:40px;">22 kits</span>
+            <div class="gauge-track">
+              <div class="gauge-fill" style="width:76%; background:#aaa;"></div>
+              <div class="gauge-safety-marker" style="left:52%;"></div>
+              <div class="gauge-reorder-marker" style="left:69%;"></div>
+            </div>
+            <span>Safety: 15 &nbsp; Reorder: 20</span>
+          </div>
+        </div>
+
+        <div class="stock-site-block">
+          <div class="stock-site-name">Paris · ACE-301 <span class="tag tag-ok" style="font-size:9px;">OK</span></div>
+          <div class="stock-gauge-row">
+            <span style="min-width:40px;">32 kits</span>
+            <div class="gauge-track">
+              <div class="gauge-fill" style="width:86%; background:#bbb;"></div>
+              <div class="gauge-safety-marker" style="left:32%;"></div>
+              <div class="gauge-reorder-marker" style="left:49%;"></div>
+            </div>
+            <span>Safety: 12 &nbsp; Reorder: 18</span>
+          </div>
+        </div>
+
+        <div class="stock-site-block">
+          <div class="stock-site-name">Paris · NEPH-112 <span class="tag tag-ok" style="font-size:9px;">OK</span></div>
+          <div class="stock-gauge-row">
+            <span style="min-width:40px;">14 kits</span>
+            <div class="gauge-track">
+              <div class="gauge-fill" style="width:70%; background:#bbb;"></div>
+              <div class="gauge-safety-marker" style="left:50%;"></div>
+              <div class="gauge-reorder-marker" style="left:70%;"></div>
+            </div>
+            <span>Safety: 10 &nbsp; Reorder: 14</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────
+       DRUG LIFECYCLE SUMMARY + RECENT ACTIVITY
+  ───────────────────────────────────────────── -->
+  <div class="col-2">
+
+    <!-- Kit Lifecycle Breakdown -->
+    <div class="card">
+      <div class="section-header">
+        <div class="section-header-title">Kit Lifecycle Breakdown — All Sites</div>
+      </div>
+      <div class="card-body">
+        <div class="annotation">Visual breakdown of kit status across all sites. Each row = one site+study combination.</div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px; font-size:10px;">
+          <span><span style="display:inline-block;width:10px;height:10px;background:#555;"></span> Available</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#888;"></span> Dispensed</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#777;"></span> In Transit</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#222;"></span> Expired</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#aaa;"></span> Quarantine</span>
+        </div>
+
+        <div style="margin-bottom:6px;">
+          <div style="font-size:10px; color:#555; margin-bottom:2px;">Bergen · ACE-301 &nbsp; (10 total)</div>
+          <div class="lifecycle-row">
+            <div class="lifecycle-seg seg-available" style="width:70%;">Available (7)</div>
+            <div class="lifecycle-seg seg-dispensed" style="width:10%;">D(1)</div>
+            <div class="lifecycle-seg seg-transit" style="width:20%;">Transit(2)</div>
+          </div>
+        </div>
+        <div style="margin-bottom:6px;">
+          <div style="font-size:10px; color:#555; margin-bottom:2px;">Berlin · ACE-301 &nbsp; (25 total)</div>
+          <div class="lifecycle-row">
+            <div class="lifecycle-seg seg-available" style="width:52%;">Available (13)</div>
+            <div class="lifecycle-seg seg-dispensed" style="width:12%;">D(3)</div>
+            <div class="lifecycle-seg seg-transit" style="width:4%;">T</div>
+            <div class="lifecycle-seg seg-expired" style="width:8%;">Exp(2)</div>
+            <div class="lifecycle-seg" style="width:24%; background:#ccc; color:#333;">Near-exp(6)</div>
+          </div>
+        </div>
+        <div style="margin-bottom:6px;">
+          <div style="font-size:10px; color:#555; margin-bottom:2px;">Paris · ACE-301 &nbsp; (35 total)</div>
+          <div class="lifecycle-row">
+            <div class="lifecycle-seg seg-available" style="width:91%;">Available (32)</div>
+            <div class="lifecycle-seg seg-dispensed" style="width:6%;">D(2)</div>
+            <div class="lifecycle-seg seg-quarantine" style="width:3%;">Q</div>
+          </div>
+        </div>
+        <div style="margin-bottom:6px;">
+          <div style="font-size:10px; color:#555; margin-bottom:2px;">Berlin · NEPH-112 &nbsp; (24 total)</div>
+          <div class="lifecycle-row">
+            <div class="lifecycle-seg seg-available" style="width:83%;">Available (20)</div>
+            <div class="lifecycle-seg seg-dispensed" style="width:4%;">D</div>
+            <div class="lifecycle-seg seg-expired" style="width:8%;">Exp(2)</div>
+            <div class="lifecycle-seg" style="width:5%; background:#ccc; color:#333;">N</div>
+          </div>
+        </div>
+        <div style="margin-bottom:6px;">
+          <div style="font-size:10px; color:#555; margin-bottom:2px;">Paris · NEPH-112 &nbsp; (16 total)</div>
+          <div class="lifecycle-row">
+            <div class="lifecycle-seg seg-available" style="width:88%;">Available (14)</div>
+            <div class="lifecycle-seg seg-dispensed" style="width:6%;">D(1)</div>
+            <div class="lifecycle-seg seg-transit" style="width:6%;">T</div>
+          </div>
+        </div>
+        <div style="margin-bottom:6px;">
+          <div style="font-size:10px; color:#555; margin-bottom:2px;">Poznań · NEPH-112 &nbsp; (6 total)</div>
+          <div class="lifecycle-row">
+            <div class="lifecycle-seg seg-available" style="width:83%;">Available (5)</div>
+            <div class="lifecycle-seg" style="width:17%; background:#ccc; color:#333;">Near-exp(1)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activity Feed -->
+    <div class="card">
+      <div class="section-header">
+        <div class="section-header-title">Recent Activity</div>
+        <div class="section-header-actions"><span class="link">View All →</span></div>
+      </div>
+      <div class="card-body">
+        <div class="annotation">System events across all studies and sites — last 48 hours</div>
+
+        <div class="activity-item">
+          <div class="activity-dot" style="background:#222;"></div>
+          <div class="activity-time">Today 09:38</div>
+          <div class="activity-text">
+            <strong>SHP-00041</strong> arrived at Paris CDG hub · World Courier
+            <div class="note">NEPH-112 · 1 kit · ETA 13 Apr</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot"></div>
+          <div class="activity-time">Today 08:00</div>
+          <div class="activity-text">
+            <strong>Alert triggered:</strong> Bergen stock below reorder point (9 kits, threshold 12)
+            <div class="note">ACE-301 · Action required</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot"></div>
+          <div class="activity-time">09 Apr 09:00</div>
+          <div class="activity-text">
+            <strong>SHP-00038</strong> out for delivery — Berlin
+            <div class="note">ACE-301 · 1 kit · ETA today 12 Apr</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot"></div>
+          <div class="activity-time">09 Apr 08:00</div>
+          <div class="activity-text">
+            <strong>Resupply order SHP-00040</strong> submitted to warehouse
+            <div class="note">NEPH-112 · Poznań · 8 kits · ETA 16 Apr</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot" style="background:#222;"></div>
+          <div class="activity-time">08 Apr 07:30</div>
+          <div class="activity-text">
+            <strong>Alert triggered:</strong> 2 expired kits — Berlin (ACE-BER-00019, 00020)
+            <div class="note">ACE-301 · Reconciliation required</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot"></div>
+          <div class="activity-time">02 Apr 11:00</div>
+          <div class="activity-text">
+            <strong>SHP-00036 held</strong> at Brussels hub — temperature excursion (+12°C/4h)
+            <div class="note">ACE-301 · Paris · QA review ongoing</div>
+          </div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot"></div>
+          <div class="activity-time">01 Apr 11:30</div>
+          <div class="activity-text">
+            <strong>Reconciliation completed</strong> — Pitié-Salpêtrière · ACE-301
+            <div class="note">Signed: Sophie Andersson · 35 kits verified</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────────────────────────────────
+       FOOTER
+  ───────────────────────────────────────────── -->
+  <div style="border-top:1.5px solid #ccc; padding:10px 0; display:flex; justify-content:space-between; font-size:10px; color:#888;">
+    <div>ClinTrack v1.0 — CRA Supply Monitor &nbsp;|&nbsp; Internal system — not for distribution</div>
+    <div>Logged in: Sophie Andersson (CRA) &nbsp;·&nbsp; Last sync: 10 Apr 2026 09:38 UTC</div>
+  </div>
+
+</div><!-- /page-wrapper -->
+</body>
+</html>

@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ClinTrack — CRA Drug Supply Monitor</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+:root{
+  --black:#111;--dark:#222;--mid:#555;--soft:#888;--line:#d0d0d0;--bg:#f0f0f0;--white:#fff;
+  --red:#c0392b;--amber:#d97706;--green:#16a34a;
+  --red-bg:#fef2f2;--amber-bg:#fffbeb;--green-bg:#f0fdf4;
+  --red-border:#fca5a5;--amber-border:#fcd34d;--green-border:#86efac;
+  --nav-h:44px;--sub-h:36px;--chrome:80px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;font-size:12px;background:var(--bg);color:var(--dark);line-height:1.3}
+
+/* ── Utilities ── */
+.mono{font-family:'Courier New',monospace}
+.bold{font-weight:700}
+.muted{color:var(--soft)}
+.small{font-size:11px}
+.tiny{font-size:10px}
+.upper{text-transform:uppercase;letter-spacing:.06em}
+.flex{display:flex;align-items:center}
+.gap4{gap:4px}.gap6{gap:6px}.gap8{gap:8px}
+.flex1{flex:1}
+.nowrap{white-space:nowrap}
+.pointer{cursor:pointer}
+.hidden{display:none!important}
+.truncate{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── Badges ── */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:2px;font-size:10px;font-weight:700;white-space:nowrap;border:1px solid transparent}
+.badge-critical{background:var(--red-bg);color:var(--red);border-color:var(--red-border)}
+.badge-warning{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-border)}
+.badge-ok{background:var(--green-bg);color:var(--green);border-color:var(--green-border)}
+.badge-transit{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}
+.badge-pending{background:#fafaf9;color:var(--mid);border-color:var(--line)}
+.badge-delayed{background:#fff7ed;color:#c2410c;border-color:#fed7aa}
+.badge-delivered{background:#f0fdf4;color:var(--green);border-color:var(--green-border)}
+.badge-quarantine{background:#fdf4ff;color:#7e22ce;border-color:#e9d5ff}
+.badge-expired{background:var(--red-bg);color:var(--red);border-color:var(--red-border)}
+.badge-overdue{background:var(--red-bg);color:var(--red);border-color:var(--red-border)}
+.badge-dark{background:var(--dark);color:var(--white);border-color:var(--dark)}
+.badge-neph{background:#f0f9ff;color:#0369a1;border-color:#7dd3fc}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:3px;border-radius:2px;font-weight:600;cursor:pointer;border:1.5px solid;transition:opacity .15s;white-space:nowrap;font-size:11px;padding:3px 8px}
+.btn:hover{opacity:.82}
+.btn-primary{background:var(--dark);color:var(--white);border-color:var(--dark)}
+.btn-danger{background:var(--red);color:var(--white);border-color:var(--red)}
+.btn-outline{background:var(--white);color:var(--dark);border-color:var(--line)}
+.btn-ghost{background:transparent;color:var(--mid);border-color:transparent;text-decoration:underline}
+.btn-xs{padding:1px 6px;font-size:10px}
+
+/* ══════════════════════════════════
+   NAVBAR  (44px)
+══════════════════════════════════ */
+.navbar{
+  position:sticky;top:0;z-index:200;
+  display:flex;align-items:center;gap:8px;
+  padding:0 14px;height:var(--nav-h);
+  background:var(--dark);color:var(--white);
+  border-bottom:2px solid var(--black);
+  flex-shrink:0;
+}
+.navbar-brand{font-size:15px;font-weight:800;letter-spacing:-.5px;color:var(--white);margin-right:4px}
+.navbar-brand span{color:#9ca3af}
+.nav-sep{width:1px;height:18px;background:rgba(255,255,255,.2)}
+.navbar-filter-label{font-size:10px;color:#9ca3af;white-space:nowrap}
+.nav-select{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:var(--white);padding:2px 18px 2px 7px;font-size:11px;border-radius:2px;appearance:none;cursor:pointer}
+.nav-select:focus{outline:none;border-color:rgba(255,255,255,.6)}
+.select-wrap{position:relative;display:inline-block}
+.select-wrap::after{content:"▾";position:absolute;right:5px;top:50%;transform:translateY(-50%);pointer-events:none;color:#9ca3af;font-size:9px}
+.navbar-right{display:flex;align-items:center;gap:7px;margin-left:auto}
+.nav-meta{font-size:10px;color:#9ca3af}
+.notif-btn{position:relative;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:var(--white);padding:3px 7px;border-radius:2px;cursor:pointer;font-size:13px;line-height:1}
+.notif-badge{position:absolute;top:-5px;right:-5px;background:var(--red);color:var(--white);font-size:9px;font-weight:700;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center}
+.user-chip{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);padding:2px 8px;border-radius:2px;font-size:10px;font-weight:700;cursor:pointer;color:var(--white)}
+
+/* ══════════════════════════════════
+   SUBNAV  (36px)
+══════════════════════════════════ */
+.subnav{
+  background:var(--white);border-bottom:1px solid var(--line);
+  padding:0 14px;display:flex;align-items:center;gap:0;
+  height:var(--sub-h);flex-shrink:0;overflow:hidden;
+}
+.subnav-tab{padding:0 12px;height:100%;display:flex;align-items:center;font-size:11px;font-weight:600;color:var(--soft);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:color .15s}
+.subnav-tab:hover{color:var(--dark)}
+.subnav-tab.active{color:var(--dark);border-bottom-color:var(--dark)}
+.subnav-right{margin-left:auto;display:flex;align-items:center;gap:6px}
+.search-box{display:flex;align-items:center;gap:3px;border:1px solid var(--line);border-radius:2px;padding:2px 7px;background:var(--white)}
+.search-box input{border:none;outline:none;font-size:11px;color:var(--dark);width:150px;background:transparent}
+.search-icon{color:var(--soft);font-size:11px}
+.nav-context{font-size:10px;color:var(--soft);padding:0 8px;border-left:1px solid var(--line)}
+
+/* ══════════════════════════════════
+   PAGE SHELL  — contains all tabs
+══════════════════════════════════ */
+.page-shell{height:calc(100vh - var(--chrome));overflow:hidden}
+
+/* ══════════════════════════════════
+   TAB PANELS
+══════════════════════════════════ */
+.tab-panel{display:none;height:100%}
+.tab-panel.active{display:flex;flex-direction:column}
+
+/* scrollable tabs */
+#tab-sites,#tab-shipments,#tab-kits,#tab-reconciliation,#tab-contacts{overflow-y:auto;padding:10px 14px;gap:10px;background:var(--bg)}
+
+/* ══════════════════════════════════
+   DASHBOARD  — NO SCROLL
+══════════════════════════════════ */
+#tab-dashboard{overflow:hidden;padding:7px 14px;gap:7px;background:var(--bg)}
+
+/* KPI strip */
+.dash-kpi{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:6px;
+  flex-shrink:0;
+}
+.kpi{background:var(--white);border:1px solid var(--line);border-radius:3px;padding:5px 10px;cursor:pointer;transition:box-shadow .15s}
+.kpi:hover{box-shadow:0 2px 6px rgba(0,0,0,.08)}
+.kpi.kpi-alert{border-left:3px solid var(--red)}
+.kpi.kpi-warn{border-left:3px solid var(--amber)}
+.kpi-num{font-size:20px;font-weight:800;line-height:1;margin-bottom:1px}
+.kpi-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--soft);margin-bottom:2px}
+.kpi-sub{font-size:9px;color:var(--soft)}
+.kpi-num.red{color:var(--red)}
+.kpi-num.amber{color:var(--amber)}
+
+/* main 3-col grid */
+.dash-grid{
+  flex:1;
+  display:grid;
+  grid-template-columns:2.1fr 1.35fr 0.9fr;
+  gap:7px;
+  min-height:0;
+}
+.dash-col{display:flex;flex-direction:column;gap:7px;min-height:0}
+
+/* generic fill-height panel */
+.dash-panel{
+  display:flex;flex-direction:column;
+  background:var(--white);border:1px solid var(--line);border-radius:3px;
+  overflow:hidden;
+  min-height:0;
+}
+.dash-panel.fill{flex:1}
+
+/* panel header */
+.ph{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:5px 10px;background:#f7f7f7;border-bottom:1px solid var(--line);
+  flex-shrink:0;
+}
+.ph-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mid)}
+.ph-right{display:flex;align-items:center;gap:6px}
+
+/* scrollable inner */
+.inner{flex:1;overflow-y:auto;min-height:0}
+
+/* ── Alert rows (compact one-liner) ── */
+.ac-row{
+  display:flex;align-items:center;gap:7px;
+  padding:5px 10px;border-bottom:1px solid #f3f3f3;
+  border-left:3px solid transparent;
+}
+.ac-row:last-child{border-bottom:none}
+.ac-row.sev-critical{border-left-color:var(--red)}
+.ac-row.sev-warning{border-left-color:var(--amber)}
+.ac-row.sev-info{border-left-color:#60a5fa}
+.ac-row.ack{opacity:.45}
+.ac-title{flex:1;font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ac-meta{font-size:10px;color:var(--soft);white-space:nowrap;min-width:0}
+.ac-actions{display:flex;gap:4px;flex-shrink:0}
+
+/* ── Site table ── */
+.st{width:100%;border-collapse:collapse}
+.st th{text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--soft);padding:5px 7px;background:#fafafa;border-bottom:1.5px solid var(--line);white-space:nowrap;position:sticky;top:0;z-index:1}
+.st td{padding:5px 7px;border-bottom:1px solid #f3f3f3;vertical-align:middle;font-size:11px}
+.st tr:hover td{background:#fafafa}
+.st tr:last-child td{border-bottom:none}
+.st tr.row-critical td{background:#fffafa}
+.st tr.row-warning td{background:#fffdf5}
+.site-nm{font-weight:700;font-size:11px}
+.site-cc{font-size:9px;color:var(--soft);margin-top:1px}
+
+/* mini progress bar */
+.mpb{display:flex;align-items:center;gap:5px}
+.mpb-track{width:56px;height:5px;background:#e5e7eb;border-radius:1px;position:relative;overflow:visible;flex-shrink:0}
+.mpb-fill{height:100%;border-radius:1px}
+.mpb-fill.c{background:var(--red)}.mpb-fill.w{background:var(--amber)}.mpb-fill.ok{background:var(--green)}
+.mpb-s{position:absolute;top:-3px;bottom:-3px;width:1.5px;border-radius:1px;background:rgba(0,0,0,.65)}
+.mpb-r{position:absolute;top:-3px;bottom:-3px;width:1.5px;border-radius:1px;background:var(--amber)}
+.mpb-n{font-size:10px;color:var(--soft);white-space:nowrap}
+
+/* ── Shipment rows ── */
+.sr{display:flex;align-items:flex-start;gap:7px;padding:6px 10px;border-bottom:1px solid #f3f3f3;border-left:3px solid transparent}
+.sr:last-child{border-bottom:none}
+.sr.delayed{border-left-color:var(--red)}
+.sr.transit{border-left-color:#3b82f6}
+.sr.pending{border-left-color:var(--line)}
+.sr.delivered{border-left-color:var(--green);opacity:.55}
+.sr-id{font-family:'Courier New',monospace;font-size:11px;font-weight:700;min-width:80px}
+.sr-body{flex:1;min-width:0}
+.sr-route{font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sr-meta{font-size:10px;color:var(--mid);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sr-note{font-size:10px;color:var(--soft);margin-top:1px}
+.sr-eta{text-align:right;flex-shrink:0;min-width:62px}
+.sr-eta-lbl{font-size:9px;color:var(--soft)}
+.sr-eta-val{font-size:11px;font-weight:700}
+.eta-bad{color:var(--red)}
+.sr-acts{display:flex;flex-direction:column;gap:3px;flex-shrink:0}
+
+/* ── Kit expiry compact ── */
+.kr{display:flex;align-items:center;gap:6px;padding:4px 10px;border-bottom:1px solid #f3f3f3;font-size:11px}
+.kr:last-child{border-bottom:none}
+.kr-id{font-family:'Courier New',monospace;font-weight:700;font-size:10px;min-width:120px}
+.kr-site{flex:1;color:var(--mid);font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kr-days{font-weight:700;font-size:10px;text-align:right;min-width:48px;flex-shrink:0}
+.kr-days.c{color:var(--red)}.kr-days.w{color:var(--amber)}
+
+/* expired mini banner */
+.exp-banner{margin:6px 10px;padding:5px 8px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:2px}
+.exp-banner-title{font-size:10px;font-weight:700;color:var(--red);margin-bottom:3px}
+.exp-kit-row{display:flex;align-items:center;gap:6px;font-size:10px;margin-bottom:1px}
+
+/* ── Recon rows ── */
+.rr{display:flex;align-items:center;gap:6px;padding:4px 10px;border-bottom:1px solid #f3f3f3;border-left:3px solid transparent}
+.rr:last-child{border-bottom:none}
+.rr.overdue{border-left-color:var(--red);background:var(--red-bg)}
+.rr.warn{border-left-color:var(--amber);background:var(--amber-bg)}
+.rr-site{flex:1;font-size:10px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rr-date{font-size:10px;color:var(--mid);flex-shrink:0;min-width:70px;text-align:right}
+
+/* ── Notification panel ── */
+.notif-panel{position:fixed;top:46px;right:10px;z-index:300;width:320px;background:var(--white);border:1px solid var(--line);border-radius:3px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:60vh;overflow:hidden;display:flex;flex-direction:column}
+.notif-panel.hidden{display:none!important}
+.notif-ph{padding:8px 10px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;background:#fafafa}
+.notif-item{padding:7px 10px;border-bottom:1px solid #f4f4f4;cursor:pointer;transition:background .1s;display:flex;gap:7px;align-items:flex-start}
+.notif-item:hover{background:#fafafa}
+.notif-item.unread{background:#fffbeb}
+.notif-text{font-size:11px;font-weight:600;margin-bottom:1px}
+.notif-sub{font-size:10px;color:var(--soft)}
+.notif-time{font-size:10px;color:var(--soft);margin-top:1px}
+
+/* ══════════════════════════════════
+   CARD  (for scrollable tabs)
+══════════════════════════════════ */
+.card{background:var(--white);border:1px solid var(--line);border-radius:3px;overflow:hidden;margin-bottom:8px}
+.card-hd{display:flex;align-items:center;justify-content:space-between;padding:7px 11px;background:#fafafa;border-bottom:1px solid var(--line)}
+.card-hd-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mid)}
+.card-hd-right{display:flex;align-items:center;gap:7px}
+.card-body{padding:10px 11px}
+.card-body-flush{padding:0}
+.card-ft{padding:6px 11px;border-top:1px solid var(--line);background:#fafafa;display:flex;justify-content:space-between;align-items:center}
+.filter-row{display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid var(--line);background:#fafafa;flex-wrap:wrap}
+.filter-chip{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;border:1.5px solid var(--line);background:var(--white);cursor:pointer;color:var(--mid);transition:all .15s}
+.filter-chip:hover{border-color:var(--dark);color:var(--dark)}
+.filter-chip.active{background:var(--dark);color:var(--white);border-color:var(--dark)}
+
+/* ── Data table (scrollable tabs) ── */
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--soft);padding:6px 9px;background:#fafafa;border-bottom:1.5px solid var(--line);white-space:nowrap}
+.data-table td{padding:7px 9px;border-bottom:1px solid #f4f4f4;vertical-align:middle;font-size:11px}
+.data-table tr.row-critical td{background:#fffafa}
+.data-table tr.row-warning td{background:#fffdf5}
+.data-table tr:hover td{background:#f8f8f8!important}
+.data-table tr:last-child td{border-bottom:none}
+.site-name-cell .name{font-weight:700;font-size:11px}
+.site-name-cell .country{font-size:10px;color:var(--soft)}
+.pb-wrap{display:flex;align-items:center;gap:5px}
+.pb-track{width:64px;height:5px;background:#e5e7eb;border-radius:1px;overflow:visible;position:relative;flex-shrink:0}
+.pb-fill{height:100%;border-radius:1px}
+.pb-fill.critical{background:var(--red)}.pb-fill.warning{background:var(--amber)}.pb-fill.ok{background:var(--green)}
+.pb-marker{position:absolute;top:-3px;bottom:-3px;width:1.5px;border-radius:1px}
+.pb-safety{background:rgba(0,0,0,.7)}.pb-reorder{background:var(--amber)}
+.pb-num{font-size:10px;color:var(--soft);white-space:nowrap}
+
+/* Shipment items (full tab) */
+.shp-item{padding:8px 11px;border-bottom:1px solid #f0f0f0;display:flex;gap:8px;align-items:flex-start;border-left:3px solid transparent}
+.shp-item.shp-delayed{border-left-color:var(--red)}
+.shp-item.shp-transit{border-left-color:#3b82f6}
+.shp-item.shp-pending{border-left-color:var(--line)}
+.shp-item.shp-delivered{border-left-color:var(--green);opacity:.6}
+.shp-id{font-family:'Courier New',monospace;font-size:11px;font-weight:700;min-width:86px}
+.shp-body{flex:1}
+.shp-route{font-size:11px;font-weight:700;margin-bottom:2px}
+.shp-meta{font-size:10px;color:var(--mid)}
+.shp-note{font-size:10px;color:var(--soft);margin-top:1px}
+.shp-eta{text-align:right;font-size:11px;min-width:70px;flex-shrink:0}
+.shp-eta .lbl{font-size:9px;color:var(--soft)}
+.shp-eta .val{font-weight:700}
+.shp-eta .overdue{color:var(--red)}
+
+/* Contact cards */
+.contact-card{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid #f4f4f4}
+.contact-card:last-child{border-bottom:none}
+.contact-avatar{width:30px;height:30px;background:#e5e7eb;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--mid);flex-shrink:0}
+.contact-body{flex:1}
+.contact-name{font-weight:700;font-size:11px}
+.contact-role{font-size:10px;color:var(--soft);margin-bottom:2px}
+.contact-site{font-size:10px;color:var(--mid)}
+
+/* Recon table (full tab) */
+.recon-row{display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid #f4f4f4;font-size:11px}
+.recon-row:last-child{border-bottom:none}
+.recon-row.overdue{background:var(--red-bg);margin:0 -11px;padding:6px 11px}
+.recon-site{flex:1;font-weight:600}
+.recon-date{color:var(--mid);min-width:100px;font-size:10px}
+.recon-status{min-width:80px;text-align:right}
+
+/* Activity */
+.act-item{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid #f4f4f4;font-size:11px;align-items:flex-start}
+.act-item:last-child{border-bottom:none}
+.act-dot{width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.act-dot.critical{background:var(--red)}.act-dot.warning{background:var(--amber)}.act-dot.info{background:#3b82f6}.act-dot.neutral{background:#d1d5db}
+.act-time{font-size:10px;color:var(--soft);min-width:68px;flex-shrink:0}
+.act-body{flex:1}
+.act-note{font-size:10px;color:var(--soft);margin-top:1px}
+
+/* Lifecycle bars */
+.lc-row{margin-bottom:6px}
+.lc-label{font-size:10px;color:var(--mid);margin-bottom:2px;display:flex;justify-content:space-between}
+.lc-bar{display:flex;height:14px;border-radius:2px;overflow:hidden;border:1px solid #e5e7eb}
+.lc-seg{display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;overflow:hidden;white-space:nowrap}
+.lc-available{background:#16a34a}.lc-dispensed{background:#6b7280}.lc-transit{background:#3b82f6}.lc-nearexp{background:var(--amber)}.lc-expired{background:var(--red)}.lc-quarantine{background:#7e22ce}
+
+/* ══════════════════════════════════
+   MODAL
+══════════════════════════════════ */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;display:flex;align-items:flex-start;justify-content:center;padding-top:50px}
+.modal-backdrop.hidden{display:none!important}
+.modal{background:var(--white);border-radius:4px;border:1px solid var(--line);width:660px;max-width:calc(100vw - 32px);max-height:82vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.18)}
+.modal-hd{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--line);background:#fafafa}
+.modal-title{font-size:13px;font-weight:700}
+.modal-close{background:none;border:none;font-size:17px;cursor:pointer;color:var(--soft);line-height:1;padding:2px 5px}
+.modal-close:hover{color:var(--dark)}
+.modal-body{padding:14px;overflow-y:auto;flex:1}
+.modal-ft{padding:10px 14px;border-top:1px solid var(--line);background:#fafafa;display:flex;justify-content:flex-end;gap:7px}
+.form-group{margin-bottom:12px}
+.form-label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mid);margin-bottom:3px}
+.form-input{width:100%;border:1px solid var(--line);border-radius:2px;padding:5px 9px;font-size:11px;color:var(--dark);background:var(--white)}
+.form-input:focus{outline:none;border-color:var(--dark)}
+.form-select{width:100%;border:1px solid var(--line);border-radius:2px;padding:5px 9px;font-size:11px;color:var(--dark);background:var(--white);appearance:none}
+.form-textarea{width:100%;border:1px solid var(--line);border-radius:2px;padding:5px 9px;font-size:11px;color:var(--dark);background:var(--white);resize:vertical;min-height:52px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.form-note{font-size:10px;color:var(--soft);margin-top:2px}
+.form-section{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mid);margin:12px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.callout{padding:7px 10px;border-radius:2px;font-size:11px;margin-bottom:10px;display:flex;gap:7px;align-items:flex-start}
+.callout-warning{background:var(--amber-bg);border:1px solid var(--amber-border);color:#92400e}
+.callout-danger{background:var(--red-bg);border:1px solid var(--red-border);color:#991b1b}
+.callout-info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af}
+.kit-detail-table{width:100%;border-collapse:collapse;font-size:11px}
+.kit-detail-table th{text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--soft);padding:4px 7px;background:#fafafa;border-bottom:1px solid var(--line)}
+.kit-detail-table td{padding:5px 7px;border-bottom:1px solid #f4f4f4;vertical-align:middle}
+.kit-detail-table tr:last-child td{border-bottom:none}
+.kit-checkbox{width:13px;height:13px;cursor:pointer}
+.recon-step{margin-bottom:10px}
+.recon-step-hd{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.step-num{width:18px;height:18px;border-radius:50%;background:var(--dark);color:var(--white);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-title{font-size:11px;font-weight:700}
+.track-timeline{padding:6px 0}
+.track-event{display:flex;gap:8px;padding:5px 0;position:relative}
+.track-event::before{content:'';position:absolute;left:8px;top:18px;bottom:-5px;width:1px;background:var(--line)}
+.track-event:last-child::before{display:none}
+.track-dot{width:17px;height:17px;border-radius:50%;border:2px solid var(--line);background:var(--white);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:8px;z-index:1}
+.track-dot.done{background:var(--green);border-color:var(--green);color:var(--white)}
+.track-dot.active{background:var(--dark);border-color:var(--dark);color:var(--white)}
+.track-dot.problem{background:var(--red);border-color:var(--red);color:var(--white)}
+.track-info{flex:1}
+.track-event-title{font-size:11px;font-weight:600}
+.track-event-meta{font-size:10px;color:var(--soft)}
+.divider{border:none;border-top:1px solid var(--line);margin:8px 0}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:10px;color:var(--soft)}
+.legend-item{display:flex;align-items:center;gap:3px}
+.legend-dot{width:8px;height:8px;border-radius:1px}
+
+/* ══════════════════════════════════
+   TOAST
+══════════════════════════════════ */
+.toast-container{position:fixed;bottom:16px;right:16px;z-index:600;display:flex;flex-direction:column;gap:6px}
+.toast{background:var(--dark);color:var(--white);padding:8px 12px;border-radius:3px;font-size:11px;display:flex;align-items:center;gap:9px;box-shadow:0 4px 12px rgba(0,0,0,.2);animation:toastIn .2s ease;min-width:240px}
+.toast.toast-success{background:#15803d}
+.toast.toast-danger{background:var(--red)}
+.toast.toast-warning{background:#b45309}
+.toast.toast-info{background:#1d4ed8}
+@keyframes toastIn{from{transform:translateX(24px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ── Safety stock gauge ── */
+.ss-block{padding:5px 0;border-bottom:1px solid #f3f3f3}
+.ss-block:last-child{border-bottom:none}
+.ss-label{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.ss-name{font-weight:700;font-size:10px}
+.gauge-wrap{display:flex;align-items:center;gap:6px}
+.gauge-track{flex:1;height:10px;background:#e5e7eb;border-radius:1px;position:relative;overflow:visible}
+.gauge-fill{height:100%;border-radius:1px}
+.gauge-fill.critical{background:var(--red)}.gauge-fill.warning{background:var(--amber)}.gauge-fill.ok{background:var(--green)}
+.gauge-marker{position:absolute;top:-3px;bottom:-3px;width:1.5px;border-radius:1px}
+.gm-safety{background:var(--dark)}.gm-reorder{background:var(--amber)}
+.gauge-nums{font-size:9px;color:var(--mid);white-space:nowrap;min-width:88px;text-align:right}
+
+@media(max-width:1100px){
+  .dash-grid{grid-template-columns:2fr 1.2fr 0.8fr}
+  .dash-kpi{grid-template-columns:repeat(3,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════ NAVBAR ══ -->
+<nav class="navbar">
+  <div class="navbar-brand">Clin<span>Track</span></div>
+  <div class="nav-sep"></div>
+  <span class="navbar-filter-label">Study:</span>
+  <div class="select-wrap">
+    <select class="nav-select" id="studyFilter" onchange="applyFilters()">
+      <option value="all">All Studies</option>
+      <option value="ACE-301">ACE-301 · Cardiology · Ph III</option>
+      <option value="NEPH-112">NEPH-112 · Nephrology · Ph II</option>
+    </select>
+  </div>
+  <span class="navbar-filter-label">Site:</span>
+  <div class="select-wrap">
+    <select class="nav-select" id="siteFilter" onchange="applyFilters()">
+      <option value="all">All Sites</option>
+      <option value="Bergen">Haukeland Bergen</option>
+      <option value="Berlin">Charité Berlin</option>
+      <option value="Paris">Pitié-Salpêtrière</option>
+      <option value="Poznan">SPSK Poznań</option>
+    </select>
+  </div>
+  <div class="navbar-right">
+    <span class="nav-meta" id="syncLabel">Sophie Andersson · CRA &nbsp;·&nbsp; Synced 09:38</span>
+    <button class="btn btn-danger btn-xs" onclick="openModal('modal-resupply')">⚡ Emergency Resupply</button>
+    <button class="notif-btn" onclick="toggleNotifPanel()" id="notifBtn">🔔<div class="notif-badge" id="notifCount">5</div></button>
+    <div class="user-chip">SA</div>
+  </div>
+</nav>
+
+<!-- ══════════════════════ SUBNAV ══ -->
+<div class="subnav">
+  <div class="subnav-tab active" onclick="switchTab('dashboard',this)">Dashboard</div>
+  <div class="subnav-tab" onclick="switchTab('sites',this)">Site Inventory</div>
+  <div class="subnav-tab" onclick="switchTab('shipments',this)">Shipments</div>
+  <div class="subnav-tab" onclick="switchTab('kits',this)">Kit List</div>
+  <div class="subnav-tab" onclick="switchTab('reconciliation',this)">Reconciliation</div>
+  <div class="subnav-tab" onclick="switchTab('contacts',this)">Contacts</div>
+  <div class="subnav-right">
+    <div class="search-box">
+      <span class="search-icon">⌕</span>
+      <input type="text" placeholder="Search kit ID, site, study…" id="globalSearch" onkeyup="handleSearch(event)"/>
+    </div>
+    <button class="btn btn-outline btn-xs" onclick="simulateSync()">↻ Refresh</button>
+    <button class="btn btn-outline btn-xs" onclick="showToast('CSV exported','success')">↓ Export</button>
+    <span class="nav-context" id="ctx-view">All Studies · 4 sites · 2 studies · 5 open alerts</span>
+  </div>
+</div>
+
+<!-- ══════════════════════ NOTIFICATION PANEL ══ -->
+<div class="notif-panel hidden" id="notifPanel">
+  <div class="notif-ph">
+    <span class="bold tiny upper">Notifications</span>
+    <button class="btn-ghost btn btn-xs" onclick="markAllNotifRead()">Mark all read</button>
+  </div>
+  <div style="overflow-y:auto;flex:1">
+    <div class="notif-item unread" onclick="notifClick(this,'modal-resupply')">
+      <span class="badge badge-critical">CRITICAL</span>
+      <div><div class="notif-text">Bergen stock below reorder threshold</div><div class="notif-sub">ACE-301 · 9 kits · Safety min: 8</div><div class="notif-time">Today 08:00</div></div>
+    </div>
+    <div class="notif-item unread" onclick="notifClick(this,'modal-recon')">
+      <span class="badge badge-critical">CRITICAL</span>
+      <div><div class="notif-text">2 expired kits — Charité Berlin</div><div class="notif-sub">ACE-BER-00019, 00020 passed SLED</div><div class="notif-time">08 Apr 07:30</div></div>
+    </div>
+    <div class="notif-item unread" onclick="notifClick(this,'modal-shipment')">
+      <span class="badge badge-warning">WARNING</span>
+      <div><div class="notif-text">SHP-00036 delayed — temp excursion</div><div class="notif-sub">+12°C / 4h at Brussels hub · QA hold</div><div class="notif-time">02 Apr 11:30</div></div>
+    </div>
+    <div class="notif-item unread">
+      <span class="badge badge-warning">WARNING</span>
+      <div><div class="notif-text">Reconciliation overdue 3 days — Poznań</div><div class="notif-sub">NEPH-112 · Due 07 Apr</div><div class="notif-time">08 Apr 06:00</div></div>
+    </div>
+    <div class="notif-item">
+      <span class="badge badge-transit">INFO</span>
+      <div><div class="notif-text">2 kits near expiry — Berlin ACE-301</div><div class="notif-sub">ACE-BER-00024, 00025 · &lt;30 days</div><div class="notif-time">09 Apr 08:00</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ PAGE SHELL ══ -->
+<div class="page-shell">
+
+  <!-- ════════════ DASHBOARD TAB ════════════ -->
+  <div class="tab-panel active" id="tab-dashboard">
+
+    <!-- KPI STRIP -->
+    <div class="dash-kpi">
+      <div class="kpi kpi-alert pointer" onclick="scrollToAlerts()" title="View alerts">
+        <div class="kpi-lbl">Open Alerts</div>
+        <div class="kpi-num red" id="kpi-alerts">5</div>
+        <div class="kpi-sub">2 critical · 3 warning</div>
+      </div>
+      <div class="kpi pointer" onclick="switchTab('sites',document.querySelectorAll('.subnav-tab')[1])">
+        <div class="kpi-lbl">Active Sites</div>
+        <div class="kpi-num">4</div>
+        <div class="kpi-sub">2 need attention</div>
+      </div>
+      <div class="kpi pointer" onclick="switchTab('shipments',document.querySelectorAll('.subnav-tab')[2])">
+        <div class="kpi-lbl">Active Shipments</div>
+        <div class="kpi-num amber">5</div>
+        <div class="kpi-sub">2 transit · 1 delayed</div>
+      </div>
+      <div class="kpi kpi-warn pointer" onclick="switchTab('kits',document.querySelectorAll('.subnav-tab')[3])">
+        <div class="kpi-lbl">Near-Expiry Kits</div>
+        <div class="kpi-num amber">4</div>
+        <div class="kpi-sub">&lt;30 days to SLED</div>
+      </div>
+      <div class="kpi kpi-alert pointer" onclick="switchTab('reconciliation',document.querySelectorAll('.subnav-tab')[4])">
+        <div class="kpi-lbl">Overdue Recon</div>
+        <div class="kpi-num red">1</div>
+        <div class="kpi-sub">Poznań · 3 days late</div>
+      </div>
+      <div class="kpi pointer">
+        <div class="kpi-lbl">Total Available Kits</div>
+        <div class="kpi-num">101</div>
+        <div class="kpi-sub">across 6 site×study</div>
+      </div>
+    </div>
+
+    <!-- MAIN 3-COL GRID -->
+    <div class="dash-grid">
+
+      <!-- LEFT COL: Alerts + Site Table -->
+      <div class="dash-col">
+
+        <!-- ALERTS -->
+        <div class="dash-panel" id="alert-zone">
+          <div class="ph">
+            <div class="ph-title">⚠ Alerts Requiring Action <span id="az-badge" style="background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:8px;margin-left:4px">5</span></div>
+            <div class="ph-right">
+              <button class="btn btn-ghost btn-xs" onclick="acknowledgeAll()">Ack all</button>
+            </div>
+          </div>
+
+          <div class="ac-row sev-critical" id="alert-bergen">
+            <span class="badge badge-critical">CRITICAL</span>
+            <span class="ac-title">Stock below reorder — Haukeland Bergen · ACE-301 (9 kits, min 8, re-order 12)</span>
+            <span class="ac-meta">09 Apr</span>
+            <div class="ac-actions">
+              <button class="btn btn-primary btn-xs" onclick="openModal('modal-resupply')">Resupply</button>
+              <button class="btn btn-outline btn-xs" onclick="openSiteDetail('Bergen','ACE-301')">Site →</button>
+              <button class="btn btn-ghost btn-xs" onclick="acknowledgeAlert('alert-bergen')">Ack</button>
+            </div>
+          </div>
+
+          <div class="ac-row sev-critical" id="alert-expired">
+            <span class="badge badge-critical">CRITICAL</span>
+            <span class="ac-title">2 expired kits — Charité Berlin · ACE-301 (ACE-BER-00019, 00020 passed SLED)</span>
+            <span class="ac-meta">08 Apr</span>
+            <div class="ac-actions">
+              <button class="btn btn-danger btn-xs" onclick="openModal('modal-recon')">Reconcile</button>
+              <button class="btn btn-ghost btn-xs" onclick="acknowledgeAlert('alert-expired')">Ack</button>
+            </div>
+          </div>
+
+          <div class="ac-row sev-warning" id="alert-temp">
+            <span class="badge badge-warning">WARNING</span>
+            <span class="ac-title">SHP-00036 delayed — temp excursion +12°C/4h at Brussels · QA hold (ACE-301, Paris)</span>
+            <span class="ac-meta">02 Apr</span>
+            <div class="ac-actions">
+              <button class="btn btn-outline btn-xs" onclick="openModal('modal-shipment')">SHP →</button>
+              <button class="btn btn-outline btn-xs" onclick="contactPerson('DHL Clinical','logistics')">DHL</button>
+              <button class="btn btn-ghost btn-xs" onclick="acknowledgeAlert('alert-temp')">Ack</button>
+            </div>
+          </div>
+
+          <div class="ac-row sev-warning" id="alert-recon-overdue">
+            <span class="badge badge-warning">WARNING</span>
+            <span class="ac-title">Reconciliation overdue 3 days — SPSK Poznań · NEPH-112 (due 07 Apr)</span>
+            <span class="ac-meta">08 Apr</span>
+            <div class="ac-actions">
+              <button class="btn btn-outline btn-xs" onclick="openModal('modal-recon')">Recon</button>
+              <button class="btn btn-outline btn-xs" onclick="contactPerson('Marek Kowalski','pharmacist')">Pharmacist</button>
+              <button class="btn btn-ghost btn-xs" onclick="acknowledgeAlert('alert-recon-overdue')">Ack</button>
+            </div>
+          </div>
+
+          <div class="ac-row sev-info ack" id="alert-nearexp">
+            <span class="badge badge-transit">INFO</span>
+            <span class="ac-title">2 kits near expiry — Berlin ACE-301 (ACE-BER-00024: 28d · 00025: 32d) — prioritise dispensing</span>
+            <span class="ac-meta">09 Apr · Ack'd</span>
+            <div class="ac-actions">
+              <button class="btn btn-ghost btn-xs" onclick="acknowledgeAlert('alert-nearexp',true)">Dismiss</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SITE OVERVIEW TABLE -->
+        <div class="dash-panel fill">
+          <div class="ph">
+            <div class="ph-title">Site Inventory Overview</div>
+            <div class="ph-right">
+              <div class="legend">
+                <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Critical</div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Low</div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>OK</div>
+              </div>
+              <button class="btn btn-ghost btn-xs" onclick="switchTab('sites',document.querySelectorAll('.subnav-tab')[1])">Full →</button>
+            </div>
+          </div>
+          <div class="inner">
+            <table class="st" id="overview-table">
+              <thead>
+                <tr>
+                  <th>Site</th>
+                  <th>Study</th>
+                  <th>Status</th>
+                  <th>Available</th>
+                  <th>Stock vs. Thresholds</th>
+                  <th>Next SLED</th>
+                  <th>Recon Due</th>
+                  <th>In Transit</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="overview-tbody">
+
+                <tr class="row-critical" data-site="Bergen" data-study="ACE-301">
+                  <td><div class="site-nm">Haukeland Bergen</div><div class="site-cc">🇳🇴 Bergen, NO</div></td>
+                  <td><span class="badge badge-dark">ACE-301</span></td>
+                  <td><span class="badge badge-critical">CRITICAL</span></td>
+                  <td><strong>9</strong></td>
+                  <td>
+                    <div class="mpb">
+                      <div class="mpb-track">
+                        <div class="mpb-fill c" style="width:30%"></div>
+                        <div class="mpb-s" style="left:26.7%" title="Safety min: 8"></div>
+                        <div class="mpb-r" style="left:40%" title="Reorder: 12"></div>
+                      </div>
+                      <span class="mpb-n">9/30 · min 8 · re 12</span>
+                    </div>
+                  </td>
+                  <td class="small">20 May · <span class="muted">40d</span></td>
+                  <td class="small" style="color:var(--amber);font-weight:700">12 Apr · 2d</td>
+                  <td><span class="badge badge-transit">6 · SHP-00039</span></td>
+                  <td>
+                    <button class="btn btn-primary btn-xs" onclick="openModal('modal-resupply')">Resupply</button>
+                    <button class="btn btn-outline btn-xs" onclick="openSiteDetail('Bergen','ACE-301')">→</button>
+                  </td>
+                </tr>
+
+                <tr class="row-warning" data-site="Berlin" data-study="ACE-301">
+                  <td><div class="site-nm">Charité Berlin</div><div class="site-cc">🇩🇪 Berlin, DE</div></td>
+                  <td><span class="badge badge-dark">ACE-301</span></td>
+                  <td><span class="badge badge-warning">LOW</span></td>
+                  <td><strong>18</strong></td>
+                  <td>
+                    <div class="mpb">
+                      <div class="mpb-track">
+                        <div class="mpb-fill w" style="width:55%"></div>
+                        <div class="mpb-s" style="left:30.3%"></div>
+                        <div class="mpb-r" style="left:45.5%"></div>
+                      </div>
+                      <span class="mpb-n">18/33 · min 10 · re 15</span>
+                    </div>
+                  </td>
+                  <td class="small" style="color:var(--red);font-weight:700">08 May · 28d ⚠</td>
+                  <td class="small">25 Apr · <span class="muted">15d</span></td>
+                  <td><span class="badge badge-transit">1 · SHP-00038</span></td>
+                  <td>
+                    <button class="btn btn-outline btn-xs" onclick="openModal('modal-recon')">Reconcile</button>
+                    <button class="btn btn-outline btn-xs" onclick="openSiteDetail('Berlin','ACE-301')">→</button>
+                  </td>
+                </tr>
+
+                <tr data-site="Berlin" data-study="NEPH-112">
+                  <td><div class="site-nm">Charité Berlin</div><div class="site-cc">🇩🇪 Berlin, DE</div></td>
+                  <td><span class="badge badge-neph">NEPH-112</span></td>
+                  <td><span class="badge badge-ok">OK</span></td>
+                  <td><strong>22</strong></td>
+                  <td>
+                    <div class="mpb">
+                      <div class="mpb-track">
+                        <div class="mpb-fill ok" style="width:75%"></div>
+                        <div class="mpb-s" style="left:51.7%"></div>
+                        <div class="mpb-r" style="left:69%"></div>
+                      </div>
+                      <span class="mpb-n">22/29 · min 15 · re 20</span>
+                    </div>
+                  </td>
+                  <td class="small" style="color:var(--red);font-weight:700">Jun 2025 EXP ⚠</td>
+                  <td class="small">30 Apr · <span class="muted">20d</span></td>
+                  <td class="muted small">—</td>
+                  <td>
+                    <button class="btn btn-outline btn-xs" onclick="openSiteDetail('Berlin','NEPH-112')">→</button>
+                  </td>
+                </tr>
+
+                <tr data-site="Paris" data-study="ACE-301">
+                  <td><div class="site-nm">Pitié-Salpêtrière</div><div class="site-cc">🇫🇷 Paris, FR</div></td>
+                  <td><span class="badge badge-dark">ACE-301</span></td>
+                  <td><span class="badge badge-delayed">SHP DELAYED</span></td>
+                  <td><strong>32</strong></td>
+                  <td>
+                    <div class="mpb">
+                      <div class="mpb-track">
+                        <div class="mpb-fill ok" style="width:86%"></div>
+                        <div class="mpb-s" style="left:32.4%"></div>
+                        <div class="mpb-r" style="left:48.6%"></div>
+                      </div>
+                      <span class="mpb-n">32/37 · min 12 · re 18</span>
+                    </div>
+                  </td>
+                  <td class="small muted">Dec 2026</td>
+                  <td class="small">29 Apr · <span class="muted">19d</span></td>
+                  <td><span class="badge badge-delayed">DELAYED · SHP-00036</span></td>
+                  <td>
+                    <button class="btn btn-outline btn-xs" onclick="openModal('modal-shipment')">SHP →</button>
+                    <button class="btn btn-outline btn-xs" onclick="openSiteDetail('Paris','ACE-301')">→</button>
+                  </td>
+                </tr>
+
+                <tr data-site="Paris" data-study="NEPH-112">
+                  <td><div class="site-nm">Pitié-Salpêtrière</div><div class="site-cc">🇫🇷 Paris, FR</div></td>
+                  <td><span class="badge badge-neph">NEPH-112</span></td>
+                  <td><span class="badge badge-ok">OK</span></td>
+                  <td><strong>14</strong></td>
+                  <td>
+                    <div class="mpb">
+                      <div class="mpb-track">
+                        <div class="mpb-fill ok" style="width:70%"></div>
+                        <div class="mpb-s" style="left:50%"></div>
+                        <div class="mpb-r" style="left:70%"></div>
+                      </div>
+                      <span class="mpb-n">14/20 · min 10 · re 14</span>
+                    </div>
+                  </td>
+                  <td class="small muted">Dec 2026</td>
+                  <td class="small">22 Apr · <span class="muted">12d</span></td>
+                  <td><span class="badge badge-transit">1 · SHP-00041</span></td>
+                  <td>
+                    <button class="btn btn-outline btn-xs" onclick="openSiteDetail('Paris','NEPH-112')">→</button>
+                  </td>
+                </tr>
+
+                <tr class="row-warning" data-site="Poznan" data-study="NEPH-112">
+                  <td><div class="site-nm">SPSK Poznań</div><div class="site-cc">🇵🇱 Poznań, PL</div></td>
+                  <td><span class="badge badge-neph">NEPH-112</span></td>
+                  <td><span class="badge badge-warning">LOW · RECON OVERDUE</span></td>
+                  <td><strong>6</strong></td>
+                  <td>
+                    <div class="mpb">
+                      <div class="mpb-track">
+                        <div class="mpb-fill w" style="width:38%"></div>
+                        <div class="mpb-s" style="left:50%"></div>
+                        <div class="mpb-r" style="left:62.5%"></div>
+                      </div>
+                      <span class="mpb-n">6/16 · min 8 · re 10</span>
+                    </div>
+                  </td>
+                  <td class="small" style="color:var(--red);font-weight:700">01 May · 21d ⚠</td>
+                  <td class="small" style="color:var(--red);font-weight:700">OVERDUE 3d</td>
+                  <td><span class="badge badge-pending">PENDING · SHP-00040</span></td>
+                  <td>
+                    <button class="btn btn-primary btn-xs" onclick="openModal('modal-resupply')">Resupply</button>
+                    <button class="btn btn-outline btn-xs" onclick="openSiteDetail('Poznan','NEPH-112')">→</button>
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /LEFT COL -->
+
+      <!-- MIDDLE COL: Shipments -->
+      <div class="dash-col">
+        <div class="dash-panel fill">
+          <div class="ph">
+            <div class="ph-title">Shipments in Motion</div>
+            <div class="ph-right">
+              <span class="badge badge-delayed" style="font-size:9px">1 Delayed</span>
+              <span class="badge badge-transit" style="font-size:9px">2 Transit</span>
+              <span class="badge badge-pending" style="font-size:9px">2 Pending</span>
+              <button class="btn btn-ghost btn-xs" onclick="switchTab('shipments',document.querySelectorAll('.subnav-tab')[2])">All →</button>
+            </div>
+          </div>
+          <div class="inner">
+
+            <!-- SHP-00036 DELAYED -->
+            <div class="sr delayed">
+              <div style="min-width:82px">
+                <div class="sr-id">SHP-00036</div>
+                <span class="badge badge-delayed" style="margin-top:3px;display:block">DELAYED</span>
+                <div class="tiny muted" style="margin-top:2px">⚠ TEMP EXC.</div>
+              </div>
+              <div class="sr-body">
+                <div class="sr-route">Frankfurt WH → Pitié-Salpêtrière</div>
+                <div class="sr-meta">DHL Clinical · DHL-CL-5500092 · ACE-301 · 1 kit</div>
+                <div class="sr-note" style="color:var(--red)">On hold Brussels hub — QA review · ref QA-2026-0402-003</div>
+              </div>
+              <div class="sr-eta">
+                <div class="sr-eta-lbl">ETA</div>
+                <div class="sr-eta-val overdue">05 Apr ❌</div>
+              </div>
+              <div class="sr-acts">
+                <button class="btn btn-primary btn-xs" onclick="openModal('modal-shipment')">Track</button>
+                <button class="btn btn-outline btn-xs" onclick="contactPerson('DHL Clinical','logistics')">DHL</button>
+              </div>
+            </div>
+
+            <!-- SHP-00038 TRANSIT -->
+            <div class="sr transit">
+              <div style="min-width:82px">
+                <div class="sr-id">SHP-00038</div>
+                <span class="badge badge-transit" style="margin-top:3px;display:block">IN TRANSIT</span>
+              </div>
+              <div class="sr-body">
+                <div class="sr-route">Frankfurt WH → Charité Berlin</div>
+                <div class="sr-meta">World Courier · WC-EU-9920183 · ACE-301 · 1 kit</div>
+                <div class="sr-note">Last: Out for delivery — Berlin hub · 09 Apr 09:00</div>
+              </div>
+              <div class="sr-eta">
+                <div class="sr-eta-lbl">ETA</div>
+                <div class="sr-eta-val">12 Apr</div>
+              </div>
+              <div class="sr-acts">
+                <button class="btn btn-outline btn-xs" onclick="openShipmentDetail('SHP-00038')">Track</button>
+              </div>
+            </div>
+
+            <!-- SHP-00041 TRANSIT -->
+            <div class="sr transit">
+              <div style="min-width:82px">
+                <div class="sr-id">SHP-00041</div>
+                <span class="badge badge-transit" style="margin-top:3px;display:block">IN TRANSIT</span>
+              </div>
+              <div class="sr-body">
+                <div class="sr-route">Frankfurt WH → Pitié-Salpêtrière</div>
+                <div class="sr-meta">World Courier · WC-EU-9920195 · NEPH-112 · 1 kit</div>
+                <div class="sr-note">Last: Arrived Paris CDG hub · 10 Apr 07:50</div>
+              </div>
+              <div class="sr-eta">
+                <div class="sr-eta-lbl">ETA</div>
+                <div class="sr-eta-val">13 Apr</div>
+              </div>
+              <div class="sr-acts">
+                <button class="btn btn-outline btn-xs" onclick="openShipmentDetail('SHP-00041')">Track</button>
+              </div>
+            </div>
+
+            <!-- SHP-00039 PENDING -->
+            <div class="sr pending">
+              <div style="min-width:82px">
+                <div class="sr-id">SHP-00039</div>
+                <span class="badge badge-pending" style="margin-top:3px;display:block">PENDING</span>
+              </div>
+              <div class="sr-body">
+                <div class="sr-route">Frankfurt WH → Haukeland Bergen</div>
+                <div class="sr-meta">World Courier · ACE-301 · 6 kits</div>
+                <div class="sr-note">Dispatch 14 Apr — awaiting WH preparation</div>
+              </div>
+              <div class="sr-eta">
+                <div class="sr-eta-lbl">ETA</div>
+                <div class="sr-eta-val">18 Apr</div>
+              </div>
+              <div class="sr-acts">
+                <button class="btn btn-outline btn-xs" onclick="contactPerson('Frankfurt Warehouse','warehouse')">WH</button>
+              </div>
+            </div>
+
+            <!-- SHP-00040 PENDING -->
+            <div class="sr pending">
+              <div style="min-width:82px">
+                <div class="sr-id">SHP-00040</div>
+                <span class="badge badge-pending" style="margin-top:3px;display:block">PENDING</span>
+              </div>
+              <div class="sr-body">
+                <div class="sr-route">Frankfurt WH → SPSK Poznań</div>
+                <div class="sr-meta">DHL Clinical · NEPH-112 · 8 kits</div>
+                <div class="sr-note">Dispatch 13 Apr — order submitted 09 Apr</div>
+              </div>
+              <div class="sr-eta">
+                <div class="sr-eta-lbl">ETA</div>
+                <div class="sr-eta-val">16 Apr</div>
+              </div>
+              <div class="sr-acts">
+                <button class="btn btn-outline btn-xs" onclick="contactPerson('Frankfurt Warehouse','warehouse')">WH</button>
+              </div>
+            </div>
+
+            <!-- SHP-00035 DELIVERED -->
+            <div class="sr delivered">
+              <div style="min-width:82px">
+                <div class="sr-id">SHP-00035</div>
+                <span class="badge badge-delivered" style="margin-top:3px;display:block">DELIVERED</span>
+              </div>
+              <div class="sr-body">
+                <div class="sr-route">Frankfurt WH → Pitié-Salpêtrière</div>
+                <div class="sr-meta">World Courier · ACE-301 · 10 kits</div>
+                <div class="sr-note">Signed: Marie Blanc · 18 Mar 2026</div>
+              </div>
+              <div class="sr-eta">
+                <div class="sr-eta-lbl">Delivered</div>
+                <div class="sr-eta-val" style="color:var(--green)">18 Mar ✓</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div><!-- /MIDDLE COL -->
+
+      <!-- RIGHT COL: Near-Expiry + Recon -->
+      <div class="dash-col">
+
+        <!-- NEAR-EXPIRY -->
+        <div class="dash-panel fill">
+          <div class="ph">
+            <div class="ph-title">Near-Expiry Kits</div>
+            <div class="ph-right">
+              <button class="btn btn-ghost btn-xs" onclick="switchTab('kits',document.querySelectorAll('.subnav-tab')[3])">All →</button>
+            </div>
+          </div>
+          <div class="inner">
+
+            <!-- Expired banner -->
+            <div class="exp-banner">
+              <div class="exp-banner-title">⛔ Expired — action required</div>
+              <div class="exp-kit-row">
+                <span class="badge badge-expired">ACE-BER-00019</span>
+                <span class="muted">Berlin · ACE-301</span>
+              </div>
+              <div class="exp-kit-row" style="margin-bottom:4px">
+                <span class="badge badge-expired">ACE-BER-00020</span>
+                <span class="muted">Berlin · ACE-301</span>
+              </div>
+              <button class="btn btn-danger btn-xs" onclick="openModal('modal-recon')">Reconcile Now →</button>
+            </div>
+
+            <!-- Kit rows -->
+            <div style="display:flex;gap:5px;font-size:9px;font-weight:700;color:var(--soft);padding:4px 10px;border-bottom:1px solid var(--line)">
+              <span style="min-width:120px">Kit ID</span>
+              <span style="flex:1">Site</span>
+              <span style="min-width:76px">SLED</span>
+              <span style="min-width:40px;text-align:right">Days</span>
+            </div>
+
+            <div class="kr" data-days="21">
+              <span class="kr-id">NEP-POZ-00006</span>
+              <span class="kr-site">Poznań · NEPH-112</span>
+              <span style="font-size:10px;min-width:76px">01 May 2026</span>
+              <span class="kr-days c">21d ⚠</span>
+            </div>
+            <div class="kr" data-days="28">
+              <span class="kr-id">ACE-BER-00024</span>
+              <span class="kr-site">Berlin · ACE-301</span>
+              <span style="font-size:10px;min-width:76px">08 May 2026</span>
+              <span class="kr-days c">28d ⚠</span>
+            </div>
+            <div class="kr" data-days="32">
+              <span class="kr-id">ACE-BER-00025</span>
+              <span class="kr-site">Berlin · ACE-301</span>
+              <span style="font-size:10px;min-width:76px">12 May 2026</span>
+              <span class="kr-days w">32d</span>
+            </div>
+            <div class="kr" data-days="40">
+              <span class="kr-id">ACE-BRG-00009</span>
+              <span class="kr-site">Bergen · ACE-301</span>
+              <span style="font-size:10px;min-width:76px">20 May 2026</span>
+              <span class="kr-days w">40d</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- RECONCILIATION -->
+        <div class="dash-panel fill">
+          <div class="ph">
+            <div class="ph-title">Reconciliation Due</div>
+            <div class="ph-right">
+              <button class="btn btn-ghost btn-xs" onclick="switchTab('reconciliation',document.querySelectorAll('.subnav-tab')[4])">All →</button>
+            </div>
+          </div>
+          <div class="inner">
+
+            <div class="rr overdue">
+              <div style="flex:1">
+                <div class="rr-site">SPSK Poznań · NEPH-112</div>
+                <div style="font-size:9px;color:var(--soft);margin-top:1px">Pharmacist: Marek Kowalski</div>
+              </div>
+              <span class="badge badge-overdue" style="flex-shrink:0">OVERDUE 3d</span>
+              <button class="btn btn-danger btn-xs" onclick="openModal('modal-recon')">Recon</button>
+              <button class="btn btn-outline btn-xs" onclick="contactPerson('Marek Kowalski','pharmacist')">📞</button>
+            </div>
+
+            <div class="rr warn">
+              <div style="flex:1">
+                <div class="rr-site">Haukeland Bergen · ACE-301</div>
+                <div style="font-size:9px;color:var(--soft);margin-top:1px">Pharmacist: Ingrid Sørensen</div>
+              </div>
+              <span class="badge badge-warning" style="flex-shrink:0">2 days</span>
+              <button class="btn btn-outline btn-xs" onclick="openModal('modal-recon')">Recon</button>
+            </div>
+
+            <div class="rr">
+              <div class="rr-site flex1">Pitié-Salpêtrière · NEPH-112</div>
+              <span class="badge badge-ok">12d</span>
+              <div class="rr-date">22 Apr</div>
+            </div>
+            <div class="rr">
+              <div class="rr-site flex1">Charité Berlin · ACE-301</div>
+              <span class="badge badge-ok">15d</span>
+              <div class="rr-date">25 Apr</div>
+            </div>
+            <div class="rr">
+              <div class="rr-site flex1">Pitié-Salpêtrière · ACE-301</div>
+              <span class="badge badge-ok">19d</span>
+              <div class="rr-date">29 Apr</div>
+            </div>
+            <div class="rr">
+              <div class="rr-site flex1">Charité Berlin · NEPH-112</div>
+              <span class="badge badge-ok">20d</span>
+              <div class="rr-date">30 Apr</div>
+            </div>
+
+            <div style="padding:5px 10px;border-top:1px solid var(--line);margin-top:auto">
+              <div class="tiny muted">Last completed: Berlin ACE-301 — 28 Mar 2026 · SA</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /RIGHT COL -->
+
+    </div><!-- /dash-grid -->
+
+  </div><!-- /tab-dashboard -->
+
+
+  <!-- ════════════ SITES TAB ════════════ -->
+  <div class="tab-panel" id="tab-sites">
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-hd-title">Full Site Inventory</div>
+        <div class="card-hd-right">
+          <button class="btn btn-primary btn-xs" onclick="openModal('modal-resupply')">+ Request Resupply</button>
+        </div>
+      </div>
+      <div class="filter-row">
+        <span class="filter-chip active" onclick="filterTableSite(this,'all')">All Sites</span>
+        <span class="filter-chip" onclick="filterTableSite(this,'critical')">Critical</span>
+        <span class="filter-chip" onclick="filterTableSite(this,'warning')">Low Stock</span>
+        <span class="filter-chip" onclick="filterTableSite(this,'recon')">Recon Due</span>
+      </div>
+      <div class="card-body-flush">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Site</th><th>Study</th><th>Status</th><th>Available</th><th>Stock Level</th>
+              <th>Safety Stock</th><th>Dispensed</th><th>In Transit</th><th>Quarantine</th>
+              <th>Next SLED</th><th>Recon Due</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="row-critical" data-site-status="critical"><td><div class="site-name-cell"><div class="name">Haukeland Bergen</div><div class="country">🇳🇴 Bergen, NO</div></div></td><td><span class="badge badge-dark">ACE-301</span></td><td><span class="badge badge-critical">CRITICAL</span></td><td><strong>9</strong></td><td><div class="pb-wrap"><div class="pb-track"><div class="pb-fill critical" style="width:30%"></div><div class="pb-marker pb-safety" style="left:26.7%"></div><div class="pb-marker pb-reorder" style="left:40%"></div></div><span class="pb-num">9/30</span></div></td><td class="small">Min 8 · Re 12</td><td class="muted small">14</td><td><span class="badge badge-transit">6 · SHP-00039</span></td><td class="muted small">—</td><td class="small" style="color:var(--amber)">20 May · 40d</td><td class="small" style="color:var(--amber)">12 Apr · 2d</td><td><button class="btn btn-primary btn-xs" onclick="openModal('modal-resupply')">Resupply</button> <button class="btn btn-outline btn-xs" onclick="openSiteDetail('Bergen','ACE-301')">Detail →</button></td></tr>
+            <tr class="row-warning" data-site-status="warning"><td><div class="site-name-cell"><div class="name">Charité Berlin</div><div class="country">🇩🇪 Berlin, DE</div></div></td><td><span class="badge badge-dark">ACE-301</span></td><td><span class="badge badge-warning">LOW</span></td><td><strong>18</strong></td><td><div class="pb-wrap"><div class="pb-track"><div class="pb-fill warning" style="width:55%"></div><div class="pb-marker pb-safety" style="left:30.3%"></div><div class="pb-marker pb-reorder" style="left:45.5%"></div></div><span class="pb-num">18/33</span></div></td><td class="small">Min 10 · Re 15</td><td class="muted small">10</td><td><span class="badge badge-transit">1 · SHP-00038</span></td><td class="muted small">—</td><td class="small" style="color:var(--red)">08 May · 28d ⚠</td><td class="small">25 Apr · 15d</td><td><button class="btn btn-outline btn-xs" onclick="openModal('modal-recon')">Reconcile</button> <button class="btn btn-outline btn-xs" onclick="openSiteDetail('Berlin','ACE-301')">Detail →</button></td></tr>
+            <tr data-site-status="ok"><td><div class="site-name-cell"><div class="name">Charité Berlin</div><div class="country">🇩🇪 Berlin, DE</div></div></td><td><span class="badge badge-neph">NEPH-112</span></td><td><span class="badge badge-ok">OK</span></td><td><strong>22</strong></td><td><div class="pb-wrap"><div class="pb-track"><div class="pb-fill ok" style="width:75%"></div></div><span class="pb-num">22/29</span></div></td><td class="small">Min 15 · Re 20</td><td class="muted small">7</td><td class="muted small">—</td><td class="muted small">—</td><td class="small" style="color:var(--red)">Jun 2025 EXP</td><td class="small">30 Apr · 20d</td><td><button class="btn btn-outline btn-xs" onclick="openSiteDetail('Berlin','NEPH-112')">Detail →</button></td></tr>
+            <tr data-site-status="warning"><td><div class="site-name-cell"><div class="name">Pitié-Salpêtrière</div><div class="country">🇫🇷 Paris, FR</div></div></td><td><span class="badge badge-dark">ACE-301</span></td><td><span class="badge badge-warning">SHP DELAYED</span></td><td><strong>32</strong></td><td><div class="pb-wrap"><div class="pb-track"><div class="pb-fill ok" style="width:86%"></div></div><span class="pb-num">32/37</span></div></td><td class="small">Min 12 · Re 18</td><td class="muted small">5</td><td><span class="badge badge-delayed">DELAYED · SHP-00036</span></td><td><span class="badge badge-quarantine">1 kit</span></td><td class="small">Dec 2026</td><td class="small">29 Apr · 19d</td><td><button class="btn btn-outline btn-xs" onclick="openModal('modal-shipment')">View SHP</button> <button class="btn btn-outline btn-xs" onclick="openSiteDetail('Paris','ACE-301')">Detail →</button></td></tr>
+            <tr data-site-status="ok"><td><div class="site-name-cell"><div class="name">Pitié-Salpêtrière</div><div class="country">🇫🇷 Paris, FR</div></div></td><td><span class="badge badge-neph">NEPH-112</span></td><td><span class="badge badge-ok">OK</span></td><td><strong>14</strong></td><td><div class="pb-wrap"><div class="pb-track"><div class="pb-fill ok" style="width:70%"></div></div><span class="pb-num">14/20</span></div></td><td class="small">Min 10 · Re 14</td><td class="muted small">6</td><td><span class="badge badge-transit">1 · SHP-00041</span></td><td class="muted small">—</td><td class="small">Dec 2026</td><td class="small">22 Apr · 12d</td><td><button class="btn btn-outline btn-xs" onclick="openSiteDetail('Paris','NEPH-112')">Detail →</button></td></tr>
+            <tr class="row-warning" data-site-status="recon warning"><td><div class="site-name-cell"><div class="name">SPSK Poznań</div><div class="country">🇵🇱 Poznań, PL</div></div></td><td><span class="badge badge-neph">NEPH-112</span></td><td><span class="badge badge-warning">LOW · RECON OVERDUE</span></td><td><strong>6</strong></td><td><div class="pb-wrap"><div class="pb-track"><div class="pb-fill warning" style="width:38%"></div><div class="pb-marker pb-safety" style="left:50%"></div><div class="pb-marker pb-reorder" style="left:62.5%"></div></div><span class="pb-num">6/16</span></div></td><td class="small">Min 8 · Re 10</td><td class="muted small">10</td><td><span class="badge badge-pending">PENDING · SHP-00040</span></td><td class="muted small">—</td><td class="small" style="color:var(--red)">01 May · 21d</td><td class="small" style="color:var(--red);font-weight:700">OVERDUE 3d</td><td><button class="btn btn-primary btn-xs" onclick="openModal('modal-resupply')">Resupply</button> <button class="btn btn-outline btn-xs" onclick="openSiteDetail('Poznan','NEPH-112')">Detail →</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════ SHIPMENTS TAB ════════════ -->
+  <div class="tab-panel" id="tab-shipments">
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-hd-title">All Shipments</div>
+        <div class="card-hd-right">
+          <button class="btn btn-primary btn-xs" onclick="openModal('modal-resupply')">+ New Resupply Request</button>
+        </div>
+      </div>
+      <div class="filter-row">
+        <span class="filter-chip active" onclick="filterShipments(this,'all')">All (6)</span>
+        <span class="filter-chip" onclick="filterShipments(this,'delayed')">Delayed (1)</span>
+        <span class="filter-chip" onclick="filterShipments(this,'transit')">In Transit (2)</span>
+        <span class="filter-chip" onclick="filterShipments(this,'pending')">Pending (2)</span>
+        <span class="filter-chip" onclick="filterShipments(this,'delivered')">Delivered (1)</span>
+      </div>
+      <div id="shp-full-list">
+        <div class="shp-item shp-delayed" data-status="delayed"><div style="min-width:96px"><div class="shp-id">SHP-00036</div><span class="badge badge-delayed" style="margin-top:3px;display:block">DELAYED</span><div class="tiny muted" style="margin-top:2px">QA HOLD · TEMP</div></div><div class="shp-body"><div class="shp-route">Frankfurt Warehouse → Pitié-Salpêtrière, Paris</div><div class="shp-meta">DHL Clinical · AWB: DHL-CL-5500092 · ACE-301 · 1 kit (ACE-PAR-00035)</div><div class="shp-note" style="color:var(--red)">⚠ On hold Brussels — +12°C/4h excursion · QA ref: QA-2026-0402-003</div><div class="shp-meta" style="margin-top:3px">Shipped: 31 Mar · Last: 02 Apr 11:00 HOLD Brussels</div></div><div class="shp-eta"><div class="lbl">Orig ETA</div><div class="val overdue">05 Apr ❌</div></div><div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0"><button class="btn btn-primary btn-xs" onclick="openModal('modal-shipment')">Track Detail</button><button class="btn btn-outline btn-xs" onclick="contactPerson('DHL Clinical','logistics')">Contact DHL</button></div></div>
+        <div class="shp-item shp-transit" data-status="transit"><div style="min-width:96px"><div class="shp-id">SHP-00038</div><span class="badge badge-transit" style="margin-top:3px;display:block">IN TRANSIT</span></div><div class="shp-body"><div class="shp-route">Frankfurt Warehouse → Charité Berlin</div><div class="shp-meta">World Courier · WC-EU-9920183 · ACE-301 · 1 kit (ACE-BER-00026)</div><div class="shp-note">Last: 09 Apr 09:00 — Out for delivery, Berlin hub</div><div class="shp-meta" style="margin-top:3px">Shipped: 08 Apr · Temp 2–8°C compliant</div></div><div class="shp-eta"><div class="lbl">ETA</div><div class="val">12 Apr</div></div><div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0"><button class="btn btn-outline btn-xs" onclick="openShipmentDetail('SHP-00038')">Track Detail</button></div></div>
+        <div class="shp-item shp-transit" data-status="transit"><div style="min-width:96px"><div class="shp-id">SHP-00041</div><span class="badge badge-transit" style="margin-top:3px;display:block">IN TRANSIT</span></div><div class="shp-body"><div class="shp-route">Frankfurt Warehouse → Pitié-Salpêtrière, Paris</div><div class="shp-meta">World Courier · WC-EU-9920195 · NEPH-112 · 1 kit (NEP-PAR-00015)</div><div class="shp-note">Last: 10 Apr 07:50 — Arrived Paris CDG hub</div><div class="shp-meta" style="margin-top:3px">Shipped: 09 Apr · Temp 2–8°C compliant</div></div><div class="shp-eta"><div class="lbl">ETA</div><div class="val">13 Apr</div></div><div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0"><button class="btn btn-outline btn-xs" onclick="openShipmentDetail('SHP-00041')">Track Detail</button></div></div>
+        <div class="shp-item shp-pending" data-status="pending"><div style="min-width:96px"><div class="shp-id">SHP-00039</div><span class="badge badge-pending" style="margin-top:3px;display:block">PENDING</span></div><div class="shp-body"><div class="shp-route">Frankfurt Warehouse → Haukeland Bergen</div><div class="shp-meta">World Courier · ACE-301 · 6 kits · Dispatch: 14 Apr</div><div class="shp-note">Awaiting warehouse preparation. Order raised by Sophie Andersson 09 Apr.</div></div><div class="shp-eta"><div class="lbl">ETA</div><div class="val">18 Apr</div></div><div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0"><button class="btn btn-outline btn-xs" onclick="contactPerson('Frankfurt Warehouse','warehouse')">Contact WH</button></div></div>
+        <div class="shp-item shp-pending" data-status="pending"><div style="min-width:96px"><div class="shp-id">SHP-00040</div><span class="badge badge-pending" style="margin-top:3px;display:block">PENDING</span></div><div class="shp-body"><div class="shp-route">Frankfurt Warehouse → SPSK Poznań</div><div class="shp-meta">DHL Clinical · NEPH-112 · 8 kits · Dispatch: 13 Apr</div><div class="shp-note">Order submitted 09 Apr. Raised by Sophie Andersson.</div></div><div class="shp-eta"><div class="lbl">ETA</div><div class="val">16 Apr</div></div><div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0"><button class="btn btn-outline btn-xs" onclick="contactPerson('Frankfurt Warehouse','warehouse')">Contact WH</button></div></div>
+        <div class="shp-item shp-delivered" data-status="delivered"><div style="min-width:96px"><div class="shp-id">SHP-00035</div><span class="badge badge-delivered" style="margin-top:3px;display:block">DELIVERED</span></div><div class="shp-body"><div class="shp-route">Frankfurt Warehouse → Pitié-Salpêtrière, Paris</div><div class="shp-meta">World Courier · WC-EU-9910044 · ACE-301 · 10 kits</div><div class="shp-note">Delivered 18 Mar 2026 · Received by Marie Blanc (Pharmacist) · Waybill signed</div></div><div class="shp-eta"><div class="lbl">Delivered</div><div class="val" style="color:var(--green)">18 Mar ✓</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════ KITS TAB ════════════ -->
+  <div class="tab-panel" id="tab-kits">
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-hd-title">Kit List — Kit-Level Inventory</div>
+        <div class="card-hd-right"><span class="muted small">116 kits total across all sites</span></div>
+      </div>
+      <div class="filter-row">
+        <span class="filter-chip active" onclick="filterKits(this,'all')">All</span>
+        <span class="filter-chip" onclick="filterKits(this,'expired')">Expired</span>
+        <span class="filter-chip" onclick="filterKits(this,'nearexp')">Near-Expiry</span>
+        <span class="filter-chip" onclick="filterKits(this,'available')">Available</span>
+        <span class="filter-chip" onclick="filterKits(this,'dispensed')">Dispensed</span>
+        <span class="filter-chip" onclick="filterKits(this,'quarantine')">Quarantine</span>
+        <span style="margin-left:auto;display:flex;gap:5px">
+          <span class="filter-chip" onclick="filterKitSite(this,'Bergen')">Bergen</span>
+          <span class="filter-chip" onclick="filterKitSite(this,'Berlin')">Berlin</span>
+          <span class="filter-chip" onclick="filterKitSite(this,'Paris')">Paris</span>
+          <span class="filter-chip" onclick="filterKitSite(this,'Poznan')">Poznań</span>
+        </span>
+      </div>
+      <div class="card-body-flush">
+        <table class="data-table">
+          <thead><tr><th>Kit ID</th><th>Study</th><th>Site</th><th>Status</th><th>SLED</th><th>Days to SLED</th><th>Location</th><th>Dispensed To</th><th>Last Updated</th><th>Actions</th></tr></thead>
+          <tbody id="kit-tbody">
+            <tr data-kit-status="expired" data-kit-site="Berlin"><td class="mono bold">ACE-BER-00019</td><td><span class="badge badge-dark">ACE-301</span></td><td>Charité Berlin</td><td><span class="badge badge-expired">EXPIRED</span></td><td style="color:var(--red);font-weight:700">01 Mar 2026</td><td style="color:var(--red);font-weight:700">PASSED</td><td>Site Pharmacy</td><td>—</td><td>08 Apr</td><td><button class="btn btn-danger btn-xs" onclick="openModal('modal-recon')">Reconcile</button></td></tr>
+            <tr data-kit-status="expired" data-kit-site="Berlin"><td class="mono bold">ACE-BER-00020</td><td><span class="badge badge-dark">ACE-301</span></td><td>Charité Berlin</td><td><span class="badge badge-expired">EXPIRED</span></td><td style="color:var(--red);font-weight:700">05 Mar 2026</td><td style="color:var(--red);font-weight:700">PASSED</td><td>Site Pharmacy</td><td>—</td><td>08 Apr</td><td><button class="btn btn-danger btn-xs" onclick="openModal('modal-recon')">Reconcile</button></td></tr>
+            <tr data-kit-status="nearexp" data-kit-site="Poznan"><td class="mono bold">NEP-POZ-00006</td><td><span class="badge badge-neph">NEPH-112</span></td><td>SPSK Poznań</td><td><span class="badge badge-warning">NEAR-EXPIRY</span></td><td style="color:var(--red)">01 May 2026</td><td style="color:var(--red);font-weight:700">21 days</td><td>Site Pharmacy</td><td>—</td><td>10 Apr</td><td><button class="btn btn-outline btn-xs">Detail</button></td></tr>
+            <tr data-kit-status="nearexp" data-kit-site="Berlin"><td class="mono bold">ACE-BER-00024</td><td><span class="badge badge-dark">ACE-301</span></td><td>Charité Berlin</td><td><span class="badge badge-warning">NEAR-EXPIRY</span></td><td style="color:var(--amber)">08 May 2026</td><td style="color:var(--amber);font-weight:700">28 days</td><td>Site Pharmacy</td><td>—</td><td>10 Apr</td><td><button class="btn btn-outline btn-xs">Detail</button></td></tr>
+            <tr data-kit-status="nearexp" data-kit-site="Berlin"><td class="mono bold">ACE-BER-00025</td><td><span class="badge badge-dark">ACE-301</span></td><td>Charité Berlin</td><td><span class="badge badge-warning">NEAR-EXPIRY</span></td><td style="color:var(--amber)">12 May 2026</td><td style="color:var(--amber)">32 days</td><td>Site Pharmacy</td><td>—</td><td>10 Apr</td><td><button class="btn btn-outline btn-xs">Detail</button></td></tr>
+            <tr data-kit-status="nearexp" data-kit-site="Bergen"><td class="mono bold">ACE-BRG-00009</td><td><span class="badge badge-dark">ACE-301</span></td><td>Haukeland Bergen</td><td><span class="badge badge-warning">NEAR-EXPIRY</span></td><td>20 May 2026</td><td style="color:var(--amber)">40 days</td><td>Site Pharmacy</td><td>—</td><td>10 Apr</td><td><button class="btn btn-outline btn-xs">Detail</button></td></tr>
+            <tr data-kit-status="quarantine" data-kit-site="Paris"><td class="mono bold">ACE-PAR-00035</td><td><span class="badge badge-dark">ACE-301</span></td><td>Pitié-Salpêtrière</td><td><span class="badge badge-quarantine">QUARANTINE</span></td><td>Dec 2026</td><td>OK</td><td>SHP-00036 Brussels Hub</td><td>—</td><td>02 Apr</td><td><button class="btn btn-outline btn-xs" onclick="openModal('modal-shipment')">SHP Detail</button></td></tr>
+            <tr data-kit-status="available" data-kit-site="Bergen"><td class="mono bold">ACE-BRG-00001</td><td><span class="badge badge-dark">ACE-301</span></td><td>Haukeland Bergen</td><td><span class="badge badge-ok">AVAILABLE</span></td><td>Jun 2027</td><td class="muted">450d</td><td>Site Pharmacy</td><td>—</td><td>28 Mar</td><td><button class="btn btn-outline btn-xs">Detail</button></td></tr>
+            <tr data-kit-status="available" data-kit-site="Berlin"><td class="mono bold">ACE-BER-00001</td><td><span class="badge badge-dark">ACE-301</span></td><td>Charité Berlin</td><td><span class="badge badge-ok">AVAILABLE</span></td><td>Aug 2027</td><td class="muted">510d</td><td>Site Pharmacy</td><td>—</td><td>28 Mar</td><td><button class="btn btn-outline btn-xs">Detail</button></td></tr>
+            <tr data-kit-status="dispensed" data-kit-site="Paris"><td class="mono bold">ACE-PAR-00010</td><td><span class="badge badge-dark">ACE-301</span></td><td>Pitié-Salpêtrière</td><td><span class="badge badge-pending">DISPENSED</span></td><td>Dec 2026</td><td class="muted">260d</td><td>Pharmacy → Patient</td><td>Patient #P-0042</td><td>01 Apr</td><td><button class="btn btn-outline btn-xs">Detail</button></td></tr>
+            <tr data-kit-status="available" data-kit-site="Poznan"><td class="mono bold">NEP-POZ-00001</td><td><span class="badge badge-neph">NEPH-112</span></td><td>SPSK Poznań</td><td><span class="badge badge-ok">AVAILABLE</span></td><td>Aug 2026</td><td class="muted">120d</td><td>Site Pharmacy</td><td>—</td><td>10 Mar</td><td><button class="btn btn-outline btn-xs">Detail</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card-ft">
+        <span class="muted small">Showing 11 of 116 kits</span>
+        <button class="btn btn-ghost btn-xs">Load more →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════ RECONCILIATION TAB ════════════ -->
+  <div class="tab-panel" id="tab-reconciliation">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-title">Reconciliation Schedule</div>
+          <div class="card-hd-right"><button class="btn btn-primary btn-xs" onclick="openModal('modal-recon')">+ Start Reconciliation</button></div>
+        </div>
+        <div class="card-body">
+          <div class="callout callout-danger">⛔ 1 overdue reconciliation — Poznań NEPH-112 is 3 days past due.</div>
+          <table class="data-table">
+            <thead><tr><th>Site · Study</th><th>Due Date</th><th>Status</th><th>Last Completed</th><th>Pharmacist</th><th>Actions</th></tr></thead>
+            <tbody>
+              <tr class="row-critical"><td class="bold">SPSK Poznań · NEPH-112</td><td style="color:var(--red);font-weight:700">07 Apr 2026</td><td><span class="badge badge-overdue">OVERDUE 3d</span></td><td>10 Mar 2026</td><td>Marek Kowalski</td><td><button class="btn btn-danger btn-xs" onclick="openModal('modal-recon')">Start Now</button> <button class="btn btn-outline btn-xs" onclick="contactPerson('Marek Kowalski','pharmacist')">📞</button></td></tr>
+              <tr class="row-warning"><td class="bold">Haukeland Bergen · ACE-301</td><td style="color:var(--amber);font-weight:700">12 Apr 2026</td><td><span class="badge badge-warning">2 days</span></td><td>15 Mar 2026</td><td>Ingrid Sørensen</td><td><button class="btn btn-outline btn-xs" onclick="openModal('modal-recon')">Start</button> <button class="btn btn-outline btn-xs" onclick="contactPerson('Ingrid Sørensen','pharmacist')">📞</button></td></tr>
+              <tr><td>Pitié-Salpêtrière · NEPH-112</td><td>22 Apr 2026</td><td><span class="badge badge-ok">12 days</span></td><td>25 Mar 2026</td><td>Marie Blanc</td><td><button class="btn btn-outline btn-xs" onclick="openModal('modal-recon')">Start</button></td></tr>
+              <tr><td>Charité Berlin · ACE-301</td><td>25 Apr 2026</td><td><span class="badge badge-ok">15 days</span></td><td>28 Mar 2026</td><td>Klaus Müller</td><td><button class="btn btn-outline btn-xs" onclick="openModal('modal-recon')">Start</button></td></tr>
+              <tr><td>Pitié-Salpêtrière · ACE-301</td><td>29 Apr 2026</td><td><span class="badge badge-ok">19 days</span></td><td>01 Apr 2026</td><td>Marie Blanc</td><td><button class="btn btn-outline btn-xs" onclick="openModal('modal-recon')">Start</button></td></tr>
+              <tr><td>Charité Berlin · NEPH-112</td><td>30 Apr 2026</td><td><span class="badge badge-ok">20 days</span></td><td>02 Apr 2026</td><td>Klaus Müller</td><td><button class="btn btn-outline btn-xs" onclick="openModal('modal-recon')">Start</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-hd-title">Reconciliation History</div></div>
+        <div class="card-body">
+          <table class="data-table">
+            <thead><tr><th>Date</th><th>Site · Study</th><th>Kits Verified</th><th>Discrepancies</th><th>Signed By</th><th>Actions</th></tr></thead>
+            <tbody>
+              <tr><td>01 Apr 2026</td><td>Paris · ACE-301</td><td>35</td><td><span class="badge badge-ok">None</span></td><td>Sophie Andersson</td><td><button class="btn btn-ghost btn-xs">PDF</button></td></tr>
+              <tr><td>28 Mar 2026</td><td>Berlin · ACE-301</td><td>20</td><td><span class="badge badge-warning">2 near-exp</span></td><td>Sophie Andersson</td><td><button class="btn btn-ghost btn-xs">PDF</button></td></tr>
+              <tr><td>25 Mar 2026</td><td>Paris · NEPH-112</td><td>13</td><td><span class="badge badge-ok">None</span></td><td>Sophie Andersson</td><td><button class="btn btn-ghost btn-xs">PDF</button></td></tr>
+              <tr><td>15 Mar 2026</td><td>Bergen · ACE-301</td><td>12</td><td><span class="badge badge-ok">None</span></td><td>Sophie Andersson</td><td><button class="btn btn-ghost btn-xs">PDF</button></td></tr>
+              <tr><td>10 Mar 2026</td><td>Poznań · NEPH-112</td><td>14</td><td><span class="badge badge-critical">1 expired</span></td><td>Sophie Andersson</td><td><button class="btn btn-ghost btn-xs">PDF</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════ CONTACTS TAB ════════════ -->
+  <div class="tab-panel" id="tab-contacts">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div class="card">
+        <div class="card-hd"><div class="card-hd-title">Warehouse</div></div>
+        <div class="card-body">
+          <div class="callout callout-info" style="margin-bottom:10px">Contact for pending orders, document errors, preparation delays.</div>
+          <div class="contact-card"><div class="contact-avatar">FW</div><div class="contact-body"><div class="contact-name">Frankfurt Clinical Warehouse</div><div class="contact-role">Primary depot — ACE-301 & NEPH-112</div><div class="contact-site">📞 +49 69 1234 5678 &nbsp;·&nbsp; ✉ wh@pharmalogix.de</div><div class="contact-site muted small">07:00–18:00 CET · Emergency: +49 69 1234 9999</div></div><div style="display:flex;gap:4px"><button class="btn btn-primary btn-xs" onclick="contactPerson('Frankfurt Warehouse','warehouse')">📞</button><button class="btn btn-outline btn-xs" onclick="showToast('Email drafted','info')">✉</button></div></div>
+          <div class="contact-card"><div class="contact-avatar">PL</div><div class="contact-body"><div class="contact-name">Peter Lange</div><div class="contact-role">Warehouse Manager</div><div class="contact-site">📞 +49 69 1234 5679</div></div><button class="btn btn-outline btn-xs" onclick="showToast('Calling Peter Lange…','info')">📞</button></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-hd-title">Logistics Providers</div></div>
+        <div class="card-body">
+          <div class="callout callout-info" style="margin-bottom:10px">Contact for in-transit shipments, delivery delays, temp deviations.</div>
+          <div class="contact-card"><div class="contact-avatar">DH</div><div class="contact-body"><div class="contact-name">DHL Clinical</div><div class="contact-role">Carrier — SHP-00036, SHP-00040</div><div class="contact-site">📞 +49 800 225 5345 &nbsp;·&nbsp; 24/7</div><div class="contact-site muted small">Account: CRO-DHL-44821</div></div><button class="btn btn-danger btn-xs" onclick="contactPerson('DHL Clinical','logistics')">📞 Urgent</button></div>
+          <div class="contact-card"><div class="contact-avatar">WC</div><div class="contact-body"><div class="contact-name">World Courier</div><div class="contact-role">Carrier — SHP-00038, SHP-00039, SHP-00041</div><div class="contact-site">📞 +1 800 221 6600 &nbsp;·&nbsp; 24/7</div><div class="contact-site muted small">Account: WC-EU-CRO-7734</div></div><button class="btn btn-outline btn-xs" onclick="contactPerson('World Courier','logistics')">📞</button></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-hd-title">Site Contacts</div></div>
+        <div class="card-body">
+          <div class="callout callout-info" style="margin-bottom:10px">Pharmacists: physical stock & temp logs. Coordinators: organizational issues.</div>
+          <div class="contact-card"><div class="contact-avatar" style="background:var(--red-bg);color:var(--red)">KM</div><div class="contact-body"><div class="contact-name">Marek Kowalski <span class="badge badge-overdue" style="font-size:9px">⚠ RECON OVERDUE</span></div><div class="contact-role">Pharmacist · SPSK Poznań</div><div class="contact-site">📞 +48 61 854 9200 &nbsp;·&nbsp; ✉ m.kowalski@spsk-poznan.pl</div></div><button class="btn btn-danger btn-xs" onclick="contactPerson('Marek Kowalski','pharmacist')">📞 Urgent</button></div>
+          <div class="contact-card"><div class="contact-avatar">IS</div><div class="contact-body"><div class="contact-name">Ingrid Sørensen</div><div class="contact-role">Pharmacist · Haukeland Bergen</div><div class="contact-site">📞 +47 55 97 5000</div></div><button class="btn btn-outline btn-xs" onclick="showToast('Calling Ingrid Sørensen…','info')">📞</button></div>
+          <div class="contact-card"><div class="contact-avatar">MB</div><div class="contact-body"><div class="contact-name">Marie Blanc</div><div class="contact-role">Pharmacist & Receiver · Pitié-Salpêtrière</div><div class="contact-site">📞 +33 1 42 16 0000</div></div><button class="btn btn-outline btn-xs" onclick="showToast('Calling Marie Blanc…','info')">📞</button></div>
+          <div class="contact-card"><div class="contact-avatar">KL</div><div class="contact-body"><div class="contact-name">Klaus Müller</div><div class="contact-role">Pharmacist · Charité Berlin</div><div class="contact-site">📞 +49 30 450 50</div></div><button class="btn btn-outline btn-xs" onclick="showToast('Calling Klaus Müller…','info')">📞</button></div>
+          <div class="contact-card"><div class="contact-avatar">EH</div><div class="contact-body"><div class="contact-name">Erik Halvorsen</div><div class="contact-role">Site Coordinator · Haukeland Bergen</div><div class="contact-site">📞 +47 55 97 5100</div></div><button class="btn btn-outline btn-xs" onclick="showToast('Calling Erik Halvorsen…','info')">📞</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page-shell -->
+
+<!-- ══════════════════════════════════════
+     MODALS
+══════════════════════════════════════ -->
+
+<!-- RESUPPLY MODAL -->
+<div class="modal-backdrop hidden" id="modal-resupply" onclick="closeModalOutside(event,'modal-resupply')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hd"><div class="modal-title">Request Resupply</div><button class="modal-close" onclick="closeModal('modal-resupply')">✕</button></div>
+    <div class="modal-body">
+      <div class="callout callout-warning">⚠ Bergen ACE-301 at critical level: 9 kits (min 8, reorder 12). SHP-00039 (6 kits, ETA 18 Apr) pending. Confirm if additional order needed.</div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Study</label><select class="form-select"><option>STUDY-ACE-301 · Cardiology · Ph III</option><option>STUDY-NEPH-112 · Nephrology · Ph II</option></select></div>
+        <div class="form-group"><label class="form-label">Site</label><select class="form-select"><option>Haukeland Bergen</option><option>Charité Berlin</option><option>Pitié-Salpêtrière</option><option>SPSK Poznań</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Number of Kits</label><input class="form-input" type="number" value="10" min="1"/><div class="form-note">SHP-00039 pending (6 kits). Typical resupply: 10–15.</div></div>
+        <div class="form-group"><label class="form-label">Preferred Carrier</label><select class="form-select"><option>World Courier</option><option>DHL Clinical</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Required By Date</label><input class="form-input" type="date" value="2026-04-25"/></div>
+        <div class="form-group"><label class="form-label">Priority</label><select class="form-select"><option>Standard</option><option>Urgent (48h)</option><option>Emergency</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">Justification</label><textarea class="form-textarea">Stock at critical level — below reorder threshold. SHP-00039 (6 kits, ETA 18 Apr) may not cover consumption rate. Additional order required.</textarea></div>
+      <div class="form-group"><label class="form-label">Delivery Address</label><input class="form-input" value="Haukeland University Hospital, Pharmacy Dept, Jonas Lies vei 65, 5021 Bergen, Norway"/><div class="form-note">Receiver: Ingrid Sørensen (Pharmacist) · +47 55 97 5000</div></div>
+    </div>
+    <div class="modal-ft"><button class="btn btn-outline" onclick="closeModal('modal-resupply')">Cancel</button><button class="btn btn-primary" onclick="submitResupply()">Submit Resupply Request</button></div>
+  </div>
+</div>
+
+<!-- RECONCILIATION MODAL -->
+<div class="modal-backdrop hidden" id="modal-recon" onclick="closeModalOutside(event,'modal-recon')">
+  <div class="modal" onclick="event.stopPropagation()" style="width:760px">
+    <div class="modal-hd"><div class="modal-title">Reconciliation — Charité Berlin · ACE-301</div><button class="modal-close" onclick="closeModal('modal-recon')">✕</button></div>
+    <div class="modal-body">
+      <div class="callout callout-danger">⛔ 2 kits passed SLED. Physical verification, destruction authorisation, and replacement order required before/during site visit 25 Apr 2026.</div>
+      <div class="recon-step">
+        <div class="recon-step-hd"><div class="step-num">1</div><div class="step-title">Verify system count vs. physical count</div></div>
+        <div class="tiny muted" style="margin-bottom:7px">System: 18 available kits. Confirm with Klaus Müller (Pharmacist).</div>
+        <div style="display:flex;gap:8px;align-items:flex-end">
+          <div class="form-group flex1" style="margin-bottom:0"><label class="form-label">System count</label><input class="form-input" value="18 kits" readonly style="background:#fafafa"/></div>
+          <div class="form-group flex1" style="margin-bottom:0"><label class="form-label">Physical count</label><input class="form-input" type="number" placeholder="Enter…" id="physCount"/></div>
+          <button class="btn btn-outline" onclick="checkDiscrepancy()">Check</button>
+        </div>
+        <div id="discrepancy-result" style="margin-top:7px"></div>
+      </div>
+      <div class="recon-step">
+        <div class="recon-step-hd"><div class="step-num">2</div><div class="step-title">Expired kits — immediate action</div></div>
+        <table class="kit-detail-table">
+          <thead><tr><th></th><th>Kit ID</th><th>SLED</th><th>Status</th><th>Location</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr style="background:var(--red-bg)"><td><input type="checkbox" class="kit-checkbox"/></td><td class="mono bold">ACE-BER-00019</td><td style="color:var(--red)">01 Mar 2026 (PASSED)</td><td><span class="badge badge-expired">EXPIRED</span></td><td>Shelf B2</td><td><select class="form-select" style="font-size:10px;padding:2px 6px;width:auto"><option>Mark for destruction</option><option>Return to warehouse</option><option>Dispute/recheck</option></select></td></tr>
+            <tr style="background:var(--red-bg)"><td><input type="checkbox" class="kit-checkbox"/></td><td class="mono bold">ACE-BER-00020</td><td style="color:var(--red)">05 Mar 2026 (PASSED)</td><td><span class="badge badge-expired">EXPIRED</span></td><td>Shelf B2</td><td><select class="form-select" style="font-size:10px;padding:2px 6px;width:auto"><option>Mark for destruction</option><option>Return to warehouse</option><option>Dispute/recheck</option></select></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="recon-step">
+        <div class="recon-step-hd"><div class="step-num">3</div><div class="step-title">Near-expiry kits</div></div>
+        <table class="kit-detail-table">
+          <thead><tr><th>Kit ID</th><th>SLED</th><th>Days</th><th>Location</th><th>Note</th></tr></thead>
+          <tbody>
+            <tr><td class="mono bold">ACE-BER-00024</td><td>08 May 2026</td><td style="color:var(--red)">28d</td><td>Shelf A1</td><td><input class="form-input" placeholder="Prioritise dispensing…" style="font-size:10px"/></td></tr>
+            <tr><td class="mono bold">ACE-BER-00025</td><td>12 May 2026</td><td style="color:var(--amber)">32d</td><td>Shelf A1</td><td><input class="form-input" placeholder="Prioritise dispensing…" style="font-size:10px"/></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="recon-step">
+        <div class="recon-step-hd"><div class="step-num">4</div><div class="step-title">Sign off</div></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Type</label><select class="form-select"><option>Remote (phone/system)</option><option>On-site visit</option></select></div>
+          <div class="form-group"><label class="form-label">Pharmacist Confirmation</label><input class="form-input" placeholder="Klaus Müller confirmed by…"/></div>
+        </div>
+        <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea">2 expired kits flagged for destruction. Physical destruction pending 25 Apr visit. Replacement resupply order to be raised.</textarea></div>
+      </div>
+    </div>
+    <div class="modal-ft"><button class="btn btn-outline" onclick="closeModal('modal-recon')">Save Draft</button><button class="btn btn-primary" onclick="submitRecon()">Submit Reconciliation</button></div>
+  </div>
+</div>
+
+<!-- SHIPMENT DETAIL MODAL -->
+<div class="modal-backdrop hidden" id="modal-shipment" onclick="closeModalOutside(event,'modal-shipment')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hd"><div class="modal-title">Shipment Detail — SHP-00036 · DELAYED · QA HOLD</div><button class="modal-close" onclick="closeModal('modal-shipment')">✕</button></div>
+    <div class="modal-body">
+      <div class="callout callout-danger">⛔ Temperature excursion recorded. On hold Brussels hub. QA ref: QA-2026-0402-003.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <div class="form-section" style="margin-top:0">Shipment Info</div>
+          <table class="kit-detail-table"><tbody>
+            <tr><td class="muted">Status</td><td><span class="badge badge-delayed">DELAYED — QA HOLD</span></td></tr>
+            <tr><td class="muted">Study</td><td>STUDY-ACE-301</td></tr>
+            <tr><td class="muted">Route</td><td>Frankfurt WH → Pitié-Salpêtrière</td></tr>
+            <tr><td class="muted">Carrier</td><td>DHL Clinical · DHL-CL-5500092</td></tr>
+            <tr><td class="muted">Kits</td><td>1 — ACE-PAR-00035</td></tr>
+            <tr><td class="muted">Shipped</td><td>31 Mar 2026</td></tr>
+            <tr><td class="muted">Orig ETA</td><td style="color:var(--red)">05 Apr 2026 ❌</td></tr>
+            <tr><td class="muted">Kit status</td><td><span class="badge badge-quarantine">QUARANTINE</span></td></tr>
+          </tbody></table>
+        </div>
+        <div>
+          <div class="form-section" style="margin-top:0">Temperature Excursion</div>
+          <table class="kit-detail-table"><tbody>
+            <tr><td class="muted">Date</td><td>02 Apr 2026 11:00</td></tr>
+            <tr><td class="muted">Location</td><td>Brussels hub (BE)</td></tr>
+            <tr><td class="muted">Excursion</td><td style="color:var(--red);font-weight:700">+12°C / 4 hours</td></tr>
+            <tr><td class="muted">Required</td><td>2–8°C</td></tr>
+            <tr><td class="muted">QA ref</td><td class="mono">QA-2026-0402-003</td></tr>
+            <tr><td class="muted">QA status</td><td><span class="badge badge-pending">Under review</span></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <div class="form-section">Tracking Timeline</div>
+      <div class="track-timeline">
+        <div class="track-event"><div class="track-dot done">✓</div><div class="track-info"><div class="track-event-title">Order confirmed — Frankfurt WH</div><div class="track-event-meta">29 Mar 2026 14:00 · Kit assigned: ACE-PAR-00035</div></div></div>
+        <div class="track-event"><div class="track-dot done">✓</div><div class="track-info"><div class="track-event-title">Collected — Frankfurt hub · Temp OK (5°C)</div><div class="track-event-meta">31 Mar 2026 09:30</div></div></div>
+        <div class="track-event"><div class="track-dot done">✓</div><div class="track-info"><div class="track-event-title">In transit — Frankfurt → Brussels</div><div class="track-event-meta">31 Mar 2026 18:00 · Temp 4°C OK</div></div></div>
+        <div class="track-event"><div class="track-dot problem">!</div><div class="track-info"><div class="track-event-title" style="color:var(--red)">Temperature excursion — Brussels hub</div><div class="track-event-meta" style="color:var(--red)">02 Apr 11:00 · +12°C/4h · QA hold initiated</div></div></div>
+        <div class="track-event"><div class="track-dot active">●</div><div class="track-info"><div class="track-event-title">On hold — Brussels hub, QA review ongoing</div><div class="track-event-meta">02 Apr → present · QA-2026-0402-003 open</div></div></div>
+        <div class="track-event"><div class="track-dot"></div><div class="track-info"><div class="track-event-title" style="color:var(--soft)">[QA release / replacement decision pending]</div></div></div>
+      </div>
+      <div class="form-section">Contacts for This Shipment</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-danger btn-xs" onclick="contactPerson('DHL Clinical','logistics')">📞 DHL Clinical (Carrier)</button>
+        <button class="btn btn-outline btn-xs" onclick="contactPerson('Frankfurt Warehouse','warehouse')">📞 Frankfurt WH</button>
+        <button class="btn btn-outline btn-xs" onclick="showToast('Contacting QA Dept…','info')">📞 QA Dept</button>
+        <button class="btn btn-outline btn-xs" onclick="contactPerson('Marie Blanc','pharmacist')">📞 Marie Blanc (Receiver)</button>
+      </div>
+    </div>
+    <div class="modal-ft"><button class="btn btn-outline" onclick="closeModal('modal-shipment')">Close</button><button class="btn btn-primary" onclick="showToast('Deviation report filed','success');closeModal('modal-shipment')">File Deviation Report</button></div>
+  </div>
+</div>
+
+<!-- SITE DETAIL MODAL -->
+<div class="modal-backdrop hidden" id="modal-site" onclick="closeModalOutside(event,'modal-site')">
+  <div class="modal" onclick="event.stopPropagation()" style="width:720px">
+    <div class="modal-hd"><div class="modal-title" id="site-modal-title">Site Detail</div><button class="modal-close" onclick="closeModal('modal-site')">✕</button></div>
+    <div class="modal-body" id="site-modal-body"></div>
+    <div class="modal-ft"><button class="btn btn-outline" onclick="closeModal('modal-site')">Close</button><button class="btn btn-primary" onclick="openModal('modal-resupply');closeModal('modal-site')">Request Resupply</button></div>
+  </div>
+</div>
+
+<!-- CONTACT MODAL -->
+<div class="modal-backdrop hidden" id="modal-contact" onclick="closeModalOutside(event,'modal-contact')">
+  <div class="modal" onclick="event.stopPropagation()" style="width:460px">
+    <div class="modal-hd"><div class="modal-title" id="contact-modal-title">Contact</div><button class="modal-close" onclick="closeModal('modal-contact')">✕</button></div>
+    <div class="modal-body" id="contact-modal-body"></div>
+    <div class="modal-ft"><button class="btn btn-outline" onclick="closeModal('modal-contact')">Close</button></div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════ -->
+<script>
+// ── Tab switching ──
+function switchTab(name, el) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.subnav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (el) el.classList.add('active');
+  closeAllNotifs();
+}
+
+function scrollToAlerts() {
+  document.getElementById('alert-zone').scrollIntoView ? null : null;
+  showToast('5 open alerts — see alert zone below KPIs', 'warning');
+}
+
+// ── Modal ──
+function openModal(id) {
+  document.getElementById(id).classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  closeAllNotifs();
+}
+function closeModal(id) {
+  document.getElementById(id).classList.add('hidden');
+  document.body.style.overflow = '';
+}
+function closeModalOutside(e, id) {
+  if (e.target === document.getElementById(id)) closeModal(id);
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-backdrop:not(.hidden)').forEach(m => m.classList.add('hidden'));
+  }
+});
+
+// ── Alert ack ──
+let alertCount = 5;
+function acknowledgeAlert(id, hide) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (hide) el.style.display = 'none';
+  else el.classList.add('ack');
+  alertCount = Math.max(0, alertCount - 1);
+  document.getElementById('az-badge').textContent = alertCount;
+  document.getElementById('kpi-alerts').textContent = alertCount;
+  const nb = document.getElementById('notifCount');
+  nb.textContent = Math.max(0, parseInt(nb.textContent) - 1);
+  showToast('Alert acknowledged', 'success');
+}
+function acknowledgeAll() {
+  document.querySelectorAll('.ac-row:not(.ack)').forEach(a => a.classList.add('ack'));
+  alertCount = 0;
+  document.getElementById('az-badge').textContent = '0';
+  document.getElementById('kpi-alerts').textContent = '0';
+  document.getElementById('notifCount').textContent = '0';
+  showToast('All alerts acknowledged', 'success');
+}
+
+// ── Notifications ──
+function toggleNotifPanel() { document.getElementById('notifPanel').classList.toggle('hidden'); }
+function closeAllNotifs() { document.getElementById('notifPanel').classList.add('hidden'); }
+function markAllNotifRead() {
+  document.querySelectorAll('.notif-item.unread').forEach(n => n.classList.remove('unread'));
+  document.getElementById('notifCount').textContent = '0';
+  showToast('Notifications cleared', 'success');
+}
+function notifClick(el, modal) { el.classList.remove('unread'); closeAllNotifs(); openModal(modal); }
+document.addEventListener('click', function(e) {
+  const panel = document.getElementById('notifPanel');
+  const btn = document.getElementById('notifBtn');
+  if (!panel.classList.contains('hidden') && !panel.contains(e.target) && !btn.contains(e.target)) panel.classList.add('hidden');
+});
+
+// ── Site detail ──
+const siteData = {
+  'Bergen-ACE-301':{title:'Haukeland Bergen — ACE-301',available:9,capacity:30,min:8,reorder:12,nextSled:'20 May 2026 (40d)',reconDue:'12 Apr 2026 (2 days)',pharmacist:'Ingrid Sørensen',coordinator:'Erik Halvorsen',inTransit:'SHP-00039 · 6 kits · ETA 18 Apr',status:'critical',note:'Stock at critical level. Resupply SHP-00039 pending.'},
+  'Berlin-ACE-301':{title:'Charité Berlin — ACE-301',available:18,capacity:33,min:10,reorder:15,nextSled:'08 May 2026 (28d — NEAR EXPIRY)',reconDue:'25 Apr 2026 (15d)',pharmacist:'Klaus Müller',coordinator:'Anna Schmidt',inTransit:'SHP-00038 · 1 kit · ETA 12 Apr',status:'warning',note:'2 expired kits require reconciliation. 2 near-expiry kits.'},
+  'Berlin-NEPH-112':{title:'Charité Berlin — NEPH-112',available:22,capacity:29,min:15,reorder:20,nextSled:'Jun 2025 — EXPIRED',reconDue:'30 Apr 2026 (20d)',pharmacist:'Klaus Müller',coordinator:'Anna Schmidt',inTransit:'—',status:'ok',note:'Stock adequate. Expired SLED on 1 kit requires reconciliation.'},
+  'Paris-ACE-301':{title:'Pitié-Salpêtrière — ACE-301',available:32,capacity:37,min:12,reorder:18,nextSled:'Dec 2026',reconDue:'29 Apr 2026 (19d)',pharmacist:'Marie Blanc',coordinator:'Jean Dupont',inTransit:'SHP-00036 DELAYED — temp excursion, QA hold',status:'warning',note:'Stock OK. 1 kit quarantine due to SHP-00036 temp excursion.'},
+  'Paris-NEPH-112':{title:'Pitié-Salpêtrière — NEPH-112',available:14,capacity:20,min:10,reorder:14,nextSled:'Dec 2026',reconDue:'22 Apr 2026 (12d)',pharmacist:'Marie Blanc',coordinator:'Jean Dupont',inTransit:'SHP-00041 · 1 kit · ETA 13 Apr',status:'ok',note:'At reorder point. SHP-00041 in transit.'},
+  'Poznan-NEPH-112':{title:'SPSK Poznań — NEPH-112',available:6,capacity:16,min:8,reorder:10,nextSled:'01 May 2026 (21d)',reconDue:'07 Apr 2026 — OVERDUE 3 days',pharmacist:'Marek Kowalski',coordinator:'Zofia Nowak',inTransit:'SHP-00040 PENDING · 8 kits · ETA 16 Apr',status:'warning',note:'Below safety stock. Reconciliation overdue. Pending resupply.'}
+};
+function openSiteDetail(site, study) {
+  const key = site + '-' + study;
+  const d = siteData[key];
+  if (!d) return;
+  document.getElementById('site-modal-title').textContent = d.title;
+  const pct = Math.round(d.available / d.capacity * 100);
+  const cls = d.status === 'critical' ? 'critical' : d.status === 'warning' ? 'warning' : 'ok';
+  document.getElementById('site-modal-body').innerHTML = `
+    <div class="callout callout-${d.status==='critical'?'danger':d.status==='warning'?'warning':'info'}">${d.note}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <div class="form-section" style="margin-top:0">Inventory</div>
+        <table class="kit-detail-table"><tbody>
+          <tr><td class="muted">Available</td><td><strong style="font-size:17px">${d.available}</strong> / ${d.capacity}</td></tr>
+          <tr><td class="muted">Safety minimum</td><td>${d.min} kits</td></tr>
+          <tr><td class="muted">Reorder point</td><td>${d.reorder} kits</td></tr>
+          <tr><td class="muted">In transit</td><td>${d.inTransit}</td></tr>
+          <tr><td class="muted">Next SLED</td><td>${d.nextSled}</td></tr>
+          <tr><td class="muted">Recon due</td><td>${d.reconDue}</td></tr>
+        </tbody></table>
+      </div>
+      <div>
+        <div class="form-section" style="margin-top:0">Stock Level</div>
+        <div class="gauge-wrap" style="margin:12px 0">
+          <div class="gauge-track" style="height:18px">
+            <div class="gauge-fill ${cls}" style="width:${pct}%"></div>
+            <div class="gauge-marker gm-safety" style="left:${Math.round(d.min/d.capacity*100)}%"></div>
+            <div class="gauge-marker gm-reorder" style="left:${Math.round(d.reorder/d.capacity*100)}%"></div>
+          </div>
+        </div>
+        <div class="small muted">${d.available} / ${d.capacity} kits (${pct}%)</div>
+        <div class="form-section">Contacts</div>
+        <div class="small bold">Pharmacist: <span class="muted">${d.pharmacist}</span></div>
+        <div class="small bold" style="margin-top:4px">Site Coordinator: <span class="muted">${d.coordinator}</span></div>
+      </div>
+    </div>`;
+  openModal('modal-site');
+}
+
+// ── Filters ──
+function applyFilters() {
+  const study = document.getElementById('studyFilter').value;
+  const site = document.getElementById('siteFilter').value;
+  document.querySelectorAll('#overview-tbody tr').forEach(r => {
+    r.style.display = (study==='all'||r.dataset.study===study) && (site==='all'||r.dataset.site===site) ? '' : 'none';
+  });
+  let label = 'All Studies';
+  if (study!=='all') label = study;
+  if (site!=='all') label += ' · ' + site;
+  document.getElementById('ctx-view').textContent = label + ' · 5 alerts';
+}
+function filterTableSite(el, filter) {
+  el.closest('.filter-row').querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('[data-site-status]').forEach(r => {
+    r.style.display = (filter==='all'||r.dataset.siteStatus.includes(filter)) ? '' : 'none';
+  });
+}
+function filterShipments(el, filter) {
+  el.closest('.filter-row').querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#shp-full-list .shp-item').forEach(i => {
+    i.style.display = (filter==='all'||i.dataset.status===filter) ? '' : 'none';
+  });
+}
+let activeKitStatus = 'all', activeKitSite = 'all';
+function filterKits(el, filter) {
+  el.closest('.filter-row').querySelectorAll('.filter-chip:not([onclick*="filterKitSite"])').forEach(c => c.classList.remove('active'));
+  el.classList.add('active'); activeKitStatus = filter; applyKitFilters();
+}
+function filterKitSite(el, site) {
+  if (el.classList.contains('active')) { el.classList.remove('active'); activeKitSite = 'all'; }
+  else { el.closest('.filter-row').querySelectorAll('.filter-chip[onclick*="filterKitSite"]').forEach(c=>c.classList.remove('active')); el.classList.add('active'); activeKitSite = site; }
+  applyKitFilters();
+}
+function applyKitFilters() {
+  document.querySelectorAll('#kit-tbody tr').forEach(r => {
+    r.style.display = (activeKitStatus==='all'||r.dataset.kitStatus===activeKitStatus) && (activeKitSite==='all'||r.dataset.kitSite===activeKitSite) ? '' : 'none';
+  });
+}
+
+// ── Search ──
+function handleSearch(e) {
+  const q = e.target.value.trim().toLowerCase();
+  if (!q) return;
+  document.querySelectorAll('#kit-tbody tr').forEach(r => r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none');
+  if (q.length > 2) switchTab('kits', document.querySelectorAll('.subnav-tab')[3]);
+}
+
+// ── Reconciliation ──
+function checkDiscrepancy() {
+  const phys = parseInt(document.getElementById('physCount').value);
+  const result = document.getElementById('discrepancy-result');
+  if (isNaN(phys)) { result.innerHTML = '<span class="small" style="color:var(--red)">Enter a number</span>'; return; }
+  if (phys===18) result.innerHTML = '<span class="badge badge-ok">✓ No discrepancy — counts match</span>';
+  else if (phys<18) result.innerHTML = `<span class="badge badge-critical">⚠ Discrepancy: system 18, physical ${phys} (${18-phys} missing). Document and investigate.</span>`;
+  else result.innerHTML = `<span class="badge badge-warning">⚠ Discrepancy: system 18, physical ${phys} (${phys-18} extra). Verify kit IDs not in system.</span>`;
+}
+function submitRecon() {
+  closeModal('modal-recon');
+  showToast('Reconciliation submitted — PDF report generated', 'success');
+  setTimeout(() => showToast('2 kits flagged for destruction. Replacement queued.', 'warning'), 1400);
+}
+function submitResupply() {
+  closeModal('modal-resupply');
+  showToast('Resupply request submitted to Frankfurt Warehouse', 'success');
+  setTimeout(() => showToast('SHP-00042 created · World Courier · ETA 18 Apr', 'info'), 900);
+}
+function openShipmentDetail(id) {
+  const msgs = {'SHP-00038':'SHP-00038 In Transit → Charité Berlin. Out for delivery, Berlin hub. ETA 12 Apr. WC-EU-9920183.','SHP-00041':'SHP-00041 In Transit → Pitié-Salpêtrière. Arrived Paris CDG hub 10 Apr 07:50. ETA 13 Apr.'};
+  showToast(msgs[id]||'Shipment detail loaded','info');
+}
+
+// ── Contact ──
+function contactPerson(name, role) {
+  const phones = {'DHL Clinical':'+49 800 225 5345 (24/7)','World Courier':'+1 800 221 6600','Frankfurt Warehouse':'+49 69 1234 5678','Marek Kowalski':'+48 61 854 9200','Ingrid Sørensen':'+47 55 97 5000','Marie Blanc':'+33 1 42 16 0000','Klaus Müller':'+49 30 450 50'};
+  const roleLabel = {logistics:'Logistics Provider',warehouse:'Warehouse',pharmacist:'Pharmacist',coordinator:'Site Coordinator'};
+  document.getElementById('contact-modal-title').textContent = name + ' — ' + (roleLabel[role]||role);
+  document.getElementById('contact-modal-body').innerHTML = `
+    <div class="contact-card" style="padding-top:0;border:none">
+      <div class="contact-avatar">${name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div>
+      <div class="contact-body">
+        <div class="contact-name">${name}</div>
+        <div class="contact-role">${roleLabel[role]||role}</div>
+        <div class="contact-site" style="margin-top:5px">📞 ${phones[name]||'See directory'}</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="form-group"><label class="form-label">Log call / note</label><textarea class="form-textarea" placeholder="What was discussed…"></textarea></div>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-primary btn-xs" onclick="showToast('Call initiated to ${name}','success');closeModal('modal-contact')">📞 Call Now</button>
+      <button class="btn btn-outline btn-xs" onclick="showToast('Email drafted','info')">✉ Email</button>
+      <button class="btn btn-outline btn-xs" onclick="showToast('Note saved','success');closeModal('modal-contact')">💾 Save Note</button>
+    </div>`;
+  openModal('modal-contact');
+}
+
+// ── Sync ──
+function simulateSync() {
+  const el = document.getElementById('syncLabel');
+  el.textContent = 'Sophie Andersson · CRA · Syncing…';
+  setTimeout(() => {
+    const now = new Date();
+    el.textContent = `Sophie Andersson · CRA · Synced ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    showToast('Data refreshed', 'success');
+  }, 1100);
+}
+
+// ── Toast ──
+function showToast(msg, type) {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast' + (type?' toast-'+type:'');
+  t.innerHTML = `<span style="flex:1">${msg}</span><span style="cursor:pointer;opacity:.6;margin-left:8px" onclick="this.parentElement.remove()">✕</span>`;
+  c.appendChild(t);
+  setTimeout(() => { if (t.parentElement) t.remove(); }, 4000);
+}
+</script>
+</body>
+</html>
